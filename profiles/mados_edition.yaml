@@ -1,0 +1,134 @@
+name: "⚡ MadOS Signature Edition (LordMadTrix)"
+description: "Édition signature MadOS par LordMadTrix. Performances gaming maximales, latence DPC minimale, Dark Mode intégral, thème cyber-néon #00f0ff, bypass total Win 11/24H2 et debloat complet."
+target_os: "win11"
+architecture: "x64"
+image_index: 1
+
+disable_telemetry: true
+optimize_services: true
+enable_gaming_tweaks: true
+
+win11:
+  bypass_tpm: true
+  bypass_secureboot: true
+  bypass_ram: true
+  bypass_cpu: true
+  bypass_storage: true
+  classic_context_menu: true
+  disable_copilot: true
+  disable_recall: true
+  disable_widgets: true
+  disable_advertising_id: true
+  disable_smartscreen_telemetry: true
+  prevent_automatic_bitlocker: true
+  disable_onedrive_autoinstall: true
+  taskbar_align_left: true
+  disable_taskbar_chat: true
+  disable_device_setup_suggestions: true
+  disable_lockscreen_tips: true
+
+remove_appx_patterns:
+  - "*BingNews*"
+  - "*BingWeather*"
+  - "*Clipchamp*"
+  - "*Copilot*"
+  - "*Cortana*"
+  - "*FeedbackHub*"
+  - "*GetHelp*"
+  - "*LinkedIn*"
+  - "*MicrosoftOfficeHub*"
+  - "*OneNote*"
+  - "*OutlookForWindows*"
+  - "*People*"
+  - "*PowerAutomateDesktop*"
+  - "*QuickAssist*"
+  - "*Solitaire*"
+  - "*StickyNotes*"
+  - "*Teams*"
+  - "*Todos*"
+  - "*Widgets*"
+  - "*Xbox*"
+  - "*YourPhone*"
+  - "*ZuneMusic*"
+  - "*ZuneVideo*"
+
+unattended:
+  enabled: true
+  admin_username: "MadTrix"
+  admin_password: ""
+  computer_name: "MADOS-RIG"
+  time_zone: "Romance Standard Time"
+  locale: "fr-FR"
+  keyboard_layout: "040c:0000040c"
+  bypass_nro: true
+  auto_disk_partition: false
+  disk_id: 0
+  use_builtin_admin: false
+  skip_eula: true
+  skip_oobe: true
+  product_key: "W269N-WFGWX-YVC9B-4J6C9-T83GX"
+  display_resolution: "1920x1080"
+
+explorer:
+  show_file_extensions: true
+  show_hidden_files: true
+  open_to_this_pc: true
+  dark_mode: true
+  hide_3d_objects: true
+  add_take_ownership: true
+  disable_start_web_search: true
+  add_restart_explorer_context_menu: true
+  add_open_with_notepad: true
+  add_cmd_admin_here: true
+  apply_mados_theme: true
+  mados_accent_color: "#00f0ff"
+
+services:
+  disable_sysmain: true
+  disable_indexing: false
+  disable_spooler: false
+  disable_error_reporting: true
+  disable_remote_registry: true
+  disable_fast_startup: true
+  disable_telemetry_tasks: true
+  disable_windows_update_auto_reboot: true
+  disable_delivery_optimization: true
+
+system_features:
+  enable_net35: true
+  enable_directplay: true
+  disable_nagle_algorithm: true
+  disable_reserved_storage: true
+  enable_ultimate_performance: true
+  enable_hags: true
+  optimize_ntfs_trim: true
+  disable_hpet_synthetic: true
+  optimize_mmcss_latency: true
+  optimize_processor_scheduling: true
+  disable_edge_prelaunch: true
+  disable_edge_telemetry: true
+  disable_smartscreen: false
+  optimize_memory_paging: true
+
+oem:
+  enabled: true
+  manufacturer: "LordMadTrix Custom Rig"
+  model: "MadOS Signature Gaming Beast"
+  support_url: "https://github.com/LordMadTrix"
+  support_hours: "24/7 Hardcore Mode"
+
+post_install:
+  install_vcredist: true
+  enable_hwid_activation: false
+  winget_apps:
+    - "7zip.7zip"
+    - "Notepad++.Notepad++"
+
+appx_preset: "recommended"
+auto_inject_host_network_drivers: false
+single_edition_only: false
+compression_type: "maximum"
+split_wim_fat32: false
+inject_drivers_to_winre: true
+setup_complete_commands:
+  - "echo [MadOS] Initialisation de l'environnement LordMadTrix... >> %WINDIR%\\Temp\\mados.log"

@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environnements virtuels
+venv/
+.venv/
+env/
+ENV/
+
+# Espaces de travail temporaires de compilation d'ISO
+workspace_build/
+mount/
+extracted/
+host_network_drivers/
+*.iso
+*.wim
+*.swm
+*.esd
+*.tmp
+*.log
+
+# Caches et logs système
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.system_generated/
+*.suo
+*.user
+*.userosv
+*.sln.docstates
+
+# Fichiers de configuration utilisateur locaux
+user_settings.json

@@ -1,0 +1,86 @@
+name: "Windows 10 - SuperLite Gaming & Privacy"
+description: "Image Windows 10 allégée, débarrassée des bloatwares UWP, télémétrie neutralisée et optimisée pour la faible latence."
+target_os: "win10"
+architecture: "x64"
+image_index: 1
+
+disable_telemetry: true
+optimize_services: true
+enable_gaming_tweaks: true
+
+remove_appx_patterns:
+  - "*Bing*"
+  - "*Cortana*"
+  - "*Xbox*"
+  - "*SkypeApp*"
+  - "*GetHelp*"
+  - "*Getstarted*"
+  - "*FeedbackHub*"
+  - "*MicrosoftSolitaireCollection*"
+  - "*People*"
+  - "*YourPhone*"
+  - "*ZuneMusic*"
+  - "*ZuneVideo*"
+  - "*OfficeHub*"
+  - "*OneNote*"
+  - "*MixedReality*"
+
+disable_features:
+  - "SMB1Protocol"
+
+unattended:
+  enabled: true
+  admin_username: "Admin"
+  admin_password: ""
+  computer_name: "WIN10-LITE"
+  time_zone: "Romance Standard Time"
+  locale: "fr-FR"
+  keyboard_layout: "040c:0000040c"
+  auto_disk_partition: false
+  disk_id: 0
+  use_builtin_admin: false
+  skip_eula: true
+  skip_oobe: true
+  product_key: "W269N-WFGWX-YVC9B-4J6C9-T83GX"
+
+explorer:
+  show_file_extensions: true
+  show_hidden_files: false
+  open_to_this_pc: true
+  dark_mode: true
+  hide_3d_objects: true
+  add_take_ownership: true
+
+services:
+  disable_sysmain: true
+  disable_indexing: false
+  disable_spooler: false
+  disable_error_reporting: true
+  disable_remote_registry: true
+  disable_fast_startup: true
+  disable_telemetry_tasks: true
+  disable_windows_update_auto_reboot: true
+  disable_delivery_optimization: true
+
+system_features:
+  enable_net35: true
+  enable_directplay: true
+  disable_nagle_algorithm: true
+  disable_reserved_storage: true
+  enable_ultimate_performance: true
+  enable_hags: true
+  optimize_ntfs_trim: true
+  disable_hpet_synthetic: true
+
+post_install:
+  install_vcredist: true
+  enable_hwid_activation: false
+  winget_apps:
+    - "7zip.7zip"
+    - "Notepad++.Notepad++"
+
+single_edition_only: false
+compression_type: "maximum"
+split_wim_fat32: false
+inject_drivers_to_winre: true
+

@@ -1,0 +1,52 @@
+name: "Windows 7 - Modern Hardware & Clean"
+description: "Image Windows 7 SP1 optimisée, allégée de la télémétrie et préparée pour l'injection des pilotes NVMe et USB 3.0/3.1."
+target_os: "win7"
+architecture: "x64"
+image_index: 1
+
+disable_telemetry: true
+optimize_services: true
+enable_gaming_tweaks: true
+
+win7:
+  inject_nvme: true
+  inject_usb3: true
+  nvme_drivers_dir: "drivers/win7/nvme"
+  usb3_drivers_dir: "drivers/win7/usb3"
+
+unattended:
+  enabled: true
+  admin_username: "Admin"
+  admin_password: ""
+  computer_name: "WIN7-MODERN"
+  time_zone: "Romance Standard Time"
+  locale: "fr-FR"
+  keyboard_layout: "040c:0000040c"
+  skip_eula: true
+  skip_oobe: true
+  product_key: "FJ8DH-76W8W-848Y3-36JY6-TX428"
+
+explorer:
+  show_file_extensions: true
+  show_hidden_files: false
+  open_to_this_pc: true
+  dark_mode: false
+  hide_3d_objects: false
+
+services:
+  disable_sysmain: false
+  disable_indexing: false
+  disable_spooler: false
+  disable_error_reporting: true
+  disable_remote_registry: true
+
+system_features:
+  enable_net35: false
+  enable_directplay: true
+
+post_install:
+  install_vcredist: true
+  winget_apps: []
+
+inject_drivers_to_winre: true
+
