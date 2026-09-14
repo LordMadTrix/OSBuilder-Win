@@ -1,0 +1,161 @@
+name: "Windows 11 24H2 Esport Competitive Edition (LordMadTrix Signature)"
+description: "Configuration ultime taillée pour l'esport et le gaming sans latence (VBS/HVCI neutralisé, pile réseau CTCP, debloat total, télémétrie éradiquée, affichage DWM réactif)."
+target_os: "win11"
+architecture: "x64"
+image_index: 1
+
+# Mises à jour & Pilotes
+driver_dirs: []
+update_files: []
+updates_dir: null
+intel_vmd_drivers_dir: null
+auto_inject_host_network_drivers: false
+inject_drivers_to_winre: true
+
+# Debloat AppX agressif orienté gaming
+appx_preset: "aggressive"
+remove_appx_patterns: []
+enable_features: []
+disable_features: []
+add_capabilities: []
+remove_capabilities: []
+
+# Optimisations globales
+disable_telemetry: true
+optimize_services: true
+enable_gaming_tweaks: true
+
+# Paramètres de virtualisation & Latence Kernel
+virtualization:
+  enable_wsl2: false
+  enable_sandbox: false
+  enable_hyperv: false
+  disable_vbs_hvci: true
+  disable_spectre_meltdown_mitigations: false
+
+# Sécurité & Politique Windows Update
+security:
+  windows_update_policy: "notify_only"
+  block_driver_updates: true
+  block_telemetry_hosts: true
+  disable_tracking_services: true
+  deep_privacy_hardening: true
+
+# Optimisations Système & Pile Réseau
+system_features:
+  enable_net35: true
+  enable_directplay: true
+  disable_nagle_algorithm: true
+  disable_reserved_storage: true
+  enable_ultimate_performance: true
+  enable_hags: true
+  optimize_ntfs_trim: true
+  disable_hpet_synthetic: true
+  optimize_mmcss_latency: true
+  optimize_processor_scheduling: true
+  disable_edge_prelaunch: true
+  disable_edge_telemetry: true
+  disable_smartscreen: false
+  optimize_memory_paging: true
+  defender_gaming_exclusions: true
+  dns_preset: "cloudflare"
+  optimize_dns_cache: true
+  features_preset: "gaming"
+
+# Explorateur & Menu Contextuel
+explorer:
+  show_file_extensions: true
+  show_hidden_files: false
+  open_to_this_pc: true
+  dark_mode: true
+  hide_3d_objects: true
+  add_take_ownership: true
+  disable_start_web_search: true
+  add_restart_explorer_context_menu: true
+  add_powershell_admin_context_menu: true
+  apply_mados_theme: true
+  mados_accent_color: "#00f0ff"
+
+# Services Système
+services:
+  disable_sysmain: false
+  disable_indexing: false
+  disable_spooler: false
+  disable_error_reporting: true
+  disable_remote_registry: true
+  disable_fast_startup: true
+  disable_telemetry_tasks: true
+  disable_windows_update_auto_reboot: true
+  disable_delivery_optimization: true
+  disable_automatic_maintenance: true
+
+# Windows 11 Spécifique
+win11:
+  bypass_tpm: true
+  bypass_secureboot: true
+  bypass_ram: true
+  bypass_cpu: true
+  bypass_storage: true
+  classic_context_menu: true
+  disable_copilot: true
+  disable_recall: true
+  disable_widgets: true
+  disable_advertising_id: true
+  disable_smartscreen_telemetry: false
+  prevent_automatic_bitlocker: true
+  disable_onedrive_autoinstall: true
+  taskbar_align_left: true
+  disable_taskbar_chat: true
+  disable_device_setup_suggestions: true
+  disable_lockscreen_tips: true
+
+# Branding Constructeur OEM
+oem:
+  enabled: true
+  manufacturer: "LordMadTrix Custom Rig"
+  model: "MadOS Esport Beast"
+  support_hours: "24/7 Esport Hotline"
+  support_phone: ""
+  support_url: "https://github.com/LordMadTrix/OSBuilder-Win"
+  logo_path: null
+  wallpaper_path: null
+
+# Post-Installation & Logiciels indispensables
+post_install:
+  install_vcredist: true
+  winget_apps:
+    - "7zip.7zip"
+    - "Valve.Steam"
+    - "Discord.Discord"
+    - "REALiX.HWiNFO"
+    - "voidtools.Everything"
+  enable_hwid_activation: false
+  offline_apps_dir: null
+
+# Déploiement Inattendu
+unattended:
+  enabled: true
+  admin_username: "Player"
+  admin_password: ""
+  computer_name: "ESPORT-RIG"
+  time_zone: "Romance Standard Time"
+  locale: "fr-FR"
+  keyboard_layout: "040c:0000040c"
+  bypass_nro: true
+  auto_logon: false
+  skip_eula: true
+  skip_oobe: true
+  auto_disk_partition: false
+  disk_id: 0
+  use_builtin_admin: false
+  display_resolution: "1920x1080"
+  first_logon_commands: []
+
+# Compression & Intégrité ISO
+single_edition_only: false
+compression_type: "maximum"
+split_wim_fat32: false
+cleanup_component_store: false
+optimize_wim: true
+generate_checksum: true
+post_install_scripts: []

@@ -102,3 +102,65 @@ class IsoValidator:
         )
 
         return result
+
+    @staticmethod
+    def compute_file_hashes(
+        file_path: Path | str,
+        algorithms: Optional[List[str]] = None,
+        chunk_size: int = 1024 * 1024
+    ) -> dict[str, str]:
+        """
+        Calcule les empreintes cryptographiques (SHA256, MD5, SHA1) d'un fichier volumineux (ISO/WIM)
+        par lecture séquentielle par blocs pour une empreinte mémoire minimale (< 5 Mo de RAM).
+        """
+        import hashlib
+
+        path = Path(file_path)
+        if not path.exists() or not path.is_file():
+            raise FileNotFoundError(f"Fichier introuvable pour le calcul de hash : {path}")
+
+        if algorithms is None:
+            algorithms = ["sha256", "md5"]
+
+        hashers = {}
+        for algo in algorithms:
+            algo_lower = algo.lower()
+            if hasattr(hashlib, algo_lower):
+                hashers[algo_lower] = getattr(hashlib, algo_lower)()
+
+        with open(path, "rb") as f:
+            while chunk := f.read(chunk_size):
+                for h in hashers.values():
+                    h.update(chunk)
+
+        return {algo: h.hexdigest().lower() for algo, h in hashers.items()}
+
+    @staticmethod
+    def generate_checksum_file(
+        file_path: Path | str,
+        algorithm: str = "sha256"
+    ) -> Path:
+        """
+        Génère un fichier de somme de contrôle standard (ex: MonImage.iso.sha256)
+        conforme aux spécifications GNU sha256sum.
+        """
+        path = Path(file_path)
+        hashes = IsoValidator.compute_file_hashes(path, algorithms=[algorithm])
+        digest = hashes.get(algorithm.lower(), "")
+
+        checksum_file = path.parent / f"{path.name}.{algorithm.lower()}"
+        checksum_content = f"{digest} *{path.name}\n"
+        checksum_file.write_text(checksum_content, encoding="utf-8")
+        return checksum_file
+
+    @staticmethod
+    def verify_checksum(
+        file_path: Path | str,
+        expected_hash: str,
+        algorithm: str = "sha256"
+    ) -> bool:
+        """Vérifie si le hash d'un fichier correspond exactement à la valeur attendue."""
+        hashes = IsoValidator.compute_file_hashes(file_path, algorithms=[algorithm])
+        computed = hashes.get(algorithm.lower(), "").lower()
+        return computed == expected_hash.strip().lower()
+

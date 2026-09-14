@@ -21,7 +21,7 @@ from PyQt6.QtGui import QFont, QColor, QTextCursor, QIcon, QKeySequence, QPixmap
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QGridLayout, QTabWidget, QLabel, QLineEdit, QPushButton, QFileDialog,
-    QComboBox, QCheckBox, QGroupBox, QProgressBar, QTextEdit,
+    QComboBox, QCheckBox, QGroupBox, QProgressBar, QTextEdit, QPlainTextEdit,
     QMessageBox, QScrollArea, QFrame, QSplitter, QInputDialog, QListWidget,
     QDialog, QToolButton
 )
@@ -29,12 +29,16 @@ from PyQt6.QtWidgets import (
 from core.config import (
     BuildProfile, TargetOS, UnattendedConfig, Win7Options, Win11Options,
     ExplorerOptions, ServicesOptions, FeaturesOptions, PostInstallOptions,
-    CompressionType, AppxPreset, OemOptions, load_profile_from_yaml, save_profile_to_yaml
+    CompressionType, AppxPreset, OemOptions, WindowsUpdatePolicy,
+    VirtualizationOptions, SecurityOptions, load_profile_from_yaml, save_profile_to_yaml
 )
 from core.pipeline import BuildPipeline
 from core.unattended_generator import SUPPORTED_LOCALES, UnattendedGenerator
 from core.iso_inspector import IsoInspector
 from core.usb_creator import UsbCreator
+from core.iso_validator import IsoValidator
+from core.app_bundler import AppBundler
+from core.network_optimizer import NetworkOptimizer
 from tools.fetch_tools import verify_all_tools
 
 
@@ -670,6 +674,7 @@ class MainWindow(QMainWindow):
         self.tabs.setObjectName("MainTabs")
         self.tabs.addTab(self._create_main_tab(), "📁 Configuration && Fichiers ISO")
         self.tabs.addTab(self._create_tweaks_tab(), "⚡ Tweaks && Optimisations OS")
+        self.tabs.addTab(self._create_apps_tab(), "📦 Logithèque && WinGet Bundler")
         self.tabs.addTab(self._create_usb_tab(), "💾 Créateur Clé USB Bootable")
         self.tabs.addTab(self._create_sources_tab(), "🌐 Sources && Intégrité ISO")
         self.console_widget = self._create_console_tab()
@@ -1201,6 +1206,8 @@ class MainWindow(QMainWindow):
 
         self.tweak_tabs.addTab(self._create_subtab_win11(), "🛡️ Windows 11 / 24H2")
         self.tweak_tabs.addTab(self._create_subtab_performance(), "⚡ Performances & Noyau")
+        self.tweak_tabs.addTab(self._create_subtab_virtualization(), "🚀 Virtualisation & Kernel")
+        self.tweak_tabs.addTab(self._create_subtab_security(), "🔒 Sécurité & Windows Update")
         self.tweak_tabs.addTab(self._create_subtab_explorer(), "🖥️ Explorateur & UI")
         self.tweak_tabs.addTab(self._create_subtab_services(), "🔧 Services & Vie Privée")
         self.tweak_tabs.addTab(self._create_subtab_components(), "📦 Débloat & Runtimes")
@@ -1305,6 +1312,7 @@ class MainWindow(QMainWindow):
         self.chk_reserved_storage = self._register_chk(QCheckBox("Désactiver l'espace réservé Windows Update (~7 Go récupérés immédiatement)"))
         self.chk_edge_prelaunch = self._register_chk(QCheckBox("Désactiver le pré-lancement en tâche de fond de Microsoft Edge"))
         self.chk_edge_telemetry = self._register_chk(QCheckBox("Désactiver la télémétrie, suggestions d'achats et annonces Microsoft Edge"))
+        self.chk_smartscreen = self._register_chk(QCheckBox("Désactiver SmartScreen pour les applications téléchargées"))
         self.chk_defender_gaming = self._register_chk(QCheckBox("Optimiser Windows Defender pour le Gaming (Exclusions C:\\Games et D:\\Games)"))
         self.chk_defender_gaming.setStyleSheet("color: #00e676; font-weight: bold;")
 
@@ -1325,6 +1333,128 @@ class MainWindow(QMainWindow):
             hw_layout.addWidget(c)
         hw_layout.addLayout(dns_box)
         l.addWidget(grp_hw_opt)
+
+        l.addStretch()
+        scroll.setWidget(w)
+        return scroll
+
+    def _create_subtab_virtualization(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(14, 14, 14, 14)
+        l.setSpacing(12)
+
+        # Tuning Kernel pour le Gaming de Compétition
+        grp_kernel = QGroupBox("Tuning Kernel & Latence Gaming (Esport Optimization)")
+        kl = QVBoxLayout(grp_kernel)
+        kl.setSpacing(8)
+
+        self.chk_virt_vbs = self._register_chk(
+            QCheckBox("Désactiver VBS (Virtualization-Based Security) & HVCI Memory Integrity (+5-15% FPS en jeu)")
+        )
+        self.chk_virt_vbs.setStyleSheet("color: #ffab00; font-weight: bold;")
+        self.chk_virt_vbs.setToolTip(
+            "Supprime la couche d'hyperviseur au-dessus du kernel Windows pour libérer la pleine puissance du CPU et éliminer les micro-saccades."
+        )
+
+        self.chk_virt_spectre = self._register_chk(
+            QCheckBox("Désactiver les atténuations logicielles CPU Spectre/Meltdown (Bancs de test / LAN isolés)")
+        )
+        self.chk_virt_spectre.setToolTip("Réduit l'overhead des commutations de contexte CPU.")
+
+        kl.addWidget(self.chk_virt_vbs)
+        kl.addWidget(self.chk_virt_spectre)
+        l.addWidget(grp_kernel)
+
+        # Sous-systèmes IA & Virtualisation
+        grp_subsystems = QGroupBox("Sous-systèmes de Virtualisation, Conteneurs & IA")
+        sl = QVBoxLayout(grp_subsystems)
+        sl.setSpacing(8)
+
+        self.chk_virt_wsl = self._register_chk(
+            QCheckBox("Pré-activer WSL2 (Windows Subsystem for Linux 2) & Virtual Machine Platform")
+        )
+        self.chk_virt_wsl.setToolTip("Composants DISM nécessaires pour exécuter des distributions Linux et Docker.")
+
+        self.chk_virt_sandbox = self._register_chk(
+            QCheckBox("Activer Windows Sandbox (Bac à sable jetable haute sécurité)")
+        )
+
+        self.chk_virt_hyperv = self._register_chk(
+            QCheckBox("Activer Hyper-V (Hyperviseur natif Microsoft)")
+        )
+
+        sl.addWidget(self.chk_virt_wsl)
+        sl.addWidget(self.chk_virt_sandbox)
+        sl.addWidget(self.chk_virt_hyperv)
+        l.addWidget(grp_subsystems)
+
+        l.addStretch()
+        scroll.setWidget(w)
+        return scroll
+
+    def _create_subtab_security(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        w = QWidget()
+        l = QVBoxLayout(w)
+        l.setContentsMargins(14, 14, 14, 14)
+        l.setSpacing(12)
+
+        # Stratégie Windows Update
+        grp_wu = QGroupBox("Stratégie de Mises à Jour Windows Update (Politique de Groupe)")
+        wu_layout = QVBoxLayout(grp_wu)
+        wu_layout.setSpacing(10)
+
+        row_pol = QHBoxLayout()
+        lbl_pol = QLabel("Politique Windows Update :")
+        lbl_pol.setStyleSheet("font-weight: bold;")
+        self.cb_wu_policy = QComboBox()
+        self.cb_wu_policy.addItem("🔔 Notification avant téléchargement & installation (Recommandé)", "notify_only")
+        self.cb_wu_policy.addItem("🛡️ Mises à jour de sécurité critiques uniquement (Pas de bloatware)", "security_only")
+        self.cb_wu_policy.addItem("🚫 Désactiver totalement le service Windows Update (Kiosk / LAN)", "disabled")
+        self.cb_wu_policy.addItem("⚙️ Comportement Windows par défaut", "default")
+        row_pol.addWidget(lbl_pol)
+        row_pol.addWidget(self.cb_wu_policy)
+        wu_layout.addLayout(row_pol)
+
+        self.chk_sec_block_driver_updates = self._register_chk(
+            QCheckBox("Empêcher Windows Update d'écraser les pilotes graphiques / audio (ExcludeWUDriversInQualityUpdate)")
+        )
+        self.chk_sec_block_driver_updates.setStyleSheet("color: #38ef7d; font-weight: bold;")
+        wu_layout.addWidget(self.chk_sec_block_driver_updates)
+        l.addWidget(grp_wu)
+
+        # Protection Anti-Télémétrie & Vie Privée
+        grp_priv = QGroupBox("Protection de la Vie Privée & Durcissement Réseau")
+        priv_layout = QVBoxLayout(grp_priv)
+        priv_layout.setSpacing(8)
+
+        self.chk_sec_block_hosts = self._register_chk(
+            QCheckBox("Bloquer les serveurs de télémétrie et d'écoute Microsoft dans le fichier 'hosts' (0.0.0.0 telemetry...)")
+        )
+        self.chk_sec_block_hosts.setStyleSheet("color: #00f0ff; font-weight: bold;")
+
+        self.chk_sec_disable_diagtrack = self._register_chk(
+            QCheckBox("Désactiver les services d'espionnage système DiagTrack et dmwappushservice")
+        )
+
+        self.chk_sec_deep_privacy = self._register_chk(
+            QCheckBox("Neutraliser définitivement Windows Recall, Copilot, Timeline et le suivi publicitaire")
+        )
+
+        self.chk_generate_checksum = self._register_chk(
+            QCheckBox("Générer automatiquement une empreinte certifiée SHA256 (GNU sha256sum) après le build de l'ISO")
+        )
+        self.chk_generate_checksum.setStyleSheet("color: #00e676; font-weight: bold;")
+
+        priv_layout.addWidget(self.chk_sec_block_hosts)
+        priv_layout.addWidget(self.chk_sec_disable_diagtrack)
+        priv_layout.addWidget(self.chk_sec_deep_privacy)
+        priv_layout.addWidget(self.chk_generate_checksum)
+        l.addWidget(grp_priv)
 
         l.addStretch()
         scroll.setWidget(w)
@@ -1418,6 +1548,7 @@ class MainWindow(QMainWindow):
 
         # Nettoyage WinSxS & Debloat AppX
         grp_deb = QGroupBox("Nettoyage WinSxS & Suppression des Bloatwares AppX")
+        dl = QVBoxLayout(grp_deb)
         self.chk_cleanup_store = self._register_chk(QCheckBox("Nettoyer et compresser le magasin WinSxS (/StartComponentCleanup /ResetBase - Gain 1-3 Go)"))
         self.chk_cleanup_store.setStyleSheet("color: #00e676; font-weight: bold;")
         self.chk_optimize_wim = self._register_chk(QCheckBox("Recompression & défragmentation WIM (Reclaim des clusters orphelins)"))
@@ -1720,7 +1851,132 @@ class MainWindow(QMainWindow):
             chk.setChecked(False)
         self.status_lbl.setText("Tous les tweaks ont été désactivés.")
 
-    # --- Onglet 3 : Créateur Clé USB Bootable ---
+    # --- Onglet Dédié : Logithèque & WinGet Bundler ---
+    def _create_apps_tab(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(14)
+
+        # En-tête avec boutons d'action rapide
+        header_card = QGroupBox("⚡ Gestionnaire de Déploiement Logiciel (WinGet Engine)")
+        hl = QVBoxLayout(header_card)
+        hl.setSpacing(10)
+
+        desc_lbl = QLabel(
+            "Sélectionnez les applications à installer automatiquement au premier démarrage (FirstLogon). "
+            "Les paquets sont téléchargés et installés silencieusement sans interaction utilisateur."
+        )
+        desc_lbl.setStyleSheet("color: #8b9bb4; font-size: 12px;")
+        desc_lbl.setWordWrap(True)
+        hl.addWidget(desc_lbl)
+
+        btn_row = QHBoxLayout()
+        btn_recom = QPushButton("✨ Sélection Recommandée")
+        btn_recom.clicked.connect(self._select_recommended_apps)
+
+        btn_gaming = QPushButton("🎮 Pack Esport & Gaming")
+        btn_gaming.clicked.connect(self._select_gaming_apps)
+
+        btn_dev = QPushButton("💻 Pack Développeur")
+        btn_dev.clicked.connect(self._select_dev_apps)
+
+        btn_clear = QPushButton("🧹 Tout Décocher")
+        btn_clear.clicked.connect(self._clear_all_apps)
+
+        self.lbl_selected_apps_count = QLabel("0 application(s) sélectionnée(s)")
+        self.lbl_selected_apps_count.setStyleSheet("color: #00f0ff; font-weight: bold; font-size: 12px;")
+
+        btn_row.addWidget(btn_recom)
+        btn_row.addWidget(btn_gaming)
+        btn_row.addWidget(btn_dev)
+        btn_row.addWidget(btn_clear)
+        btn_row.addStretch()
+        btn_row.addWidget(self.lbl_selected_apps_count)
+        hl.addLayout(btn_row)
+        layout.addWidget(header_card)
+
+        # Grille des catégories
+        self.app_checkboxes: Dict[str, QCheckBox] = {}
+
+        categories = AppBundler.get_categories()
+        for cat in categories:
+            cat_label = AppBundler.get_category_label(cat)
+            grp = QGroupBox(cat_label)
+            grp_layout = QGridLayout(grp)
+            grp_layout.setSpacing(10)
+
+            apps = AppBundler.get_apps_by_category(cat)
+            for idx, app_item in enumerate(apps):
+                row = idx // 2
+                col = idx % 2
+
+                chk = QCheckBox(f"{app_item.name}")
+                chk.setToolTip(f"<b>{app_item.name}</b><br>{app_item.description}<br><small>ID WinGet : {app_item.winget_id}</small>")
+                chk.setChecked(app_item.default_selected)
+                chk.stateChanged.connect(self._update_apps_counter)
+
+                self.app_checkboxes[app_item.winget_id] = chk
+                grp_layout.addWidget(chk, row, col)
+
+            layout.addWidget(grp)
+
+        # Packages WinGet Personnalisés
+        grp_custom = QGroupBox("➕ Packages WinGet Personnalisés Additionnels")
+        cl = QVBoxLayout(grp_custom)
+        cl.setSpacing(6)
+        lbl_hint = QLabel("Saisissez les identifiants WinGet officiels séparés par des virgules (ex: Spotify.Spotify, Obsidian.Obsidian) :")
+        lbl_hint.setStyleSheet("color: #8b9bb4; font-size: 11px;")
+        self.txt_custom_winget_tab = QLineEdit()
+        self.txt_custom_winget_tab.setPlaceholderText("Ex: VideoLAN.VLC, Git.Git, Brave.Brave")
+        self.txt_custom_winget_tab.textChanged.connect(self._update_apps_counter)
+        cl.addWidget(lbl_hint)
+        cl.addWidget(self.txt_custom_winget_tab)
+        layout.addWidget(grp_custom)
+
+        layout.addStretch()
+        scroll.setWidget(container)
+        self._update_apps_counter()
+        return scroll
+
+    def _update_apps_counter(self):
+        count = sum(1 for chk in getattr(self, "app_checkboxes", {}).values() if chk.isChecked())
+        custom_txt = getattr(self, "txt_custom_winget_tab", None)
+        if custom_txt:
+            custom_count = len([x.strip() for x in custom_txt.text().split(",") if x.strip()])
+            count += custom_count
+        lbl = getattr(self, "lbl_selected_apps_count", None)
+        if lbl:
+            lbl.setText(f"{count} application(s) sélectionnée(s)")
+
+    def _select_recommended_apps(self):
+        for app in AppBundler.get_catalog():
+            if app.winget_id in self.app_checkboxes:
+                self.app_checkboxes[app.winget_id].setChecked(app.default_selected)
+        self._update_apps_counter()
+
+    def _select_gaming_apps(self):
+        gaming_ids = {"Valve.Steam", "Discord.Discord", "OBSProject.OBSStudio", "Guru3D.Afterburner", "REALiX.HWiNFO", "7zip.7zip", "voidtools.Everything", "Microsoft.VCRedist.2015+.x64", "Microsoft.DirectX"}
+        for wid, chk in self.app_checkboxes.items():
+            chk.setChecked(wid in gaming_ids)
+        self._update_apps_counter()
+
+    def _select_dev_apps(self):
+        dev_ids = {"Microsoft.VisualStudioCode", "Git.Git", "Python.Python.3.12", "OpenJS.NodeJS.LTS", "Microsoft.WindowsTerminal", "Microsoft.PowerToys", "7zip.7zip", "Mozilla.Firefox"}
+        for wid, chk in self.app_checkboxes.items():
+            chk.setChecked(wid in dev_ids)
+        self._update_apps_counter()
+
+    def _clear_all_apps(self):
+        for chk in self.app_checkboxes.values():
+            chk.setChecked(False)
+        if hasattr(self, "txt_custom_winget_tab"):
+            self.txt_custom_winget_tab.clear()
+        self._update_apps_counter()
+
+    # --- Onglet 4 : Créateur Clé USB Bootable ---
     def _create_usb_tab(self) -> QWidget:
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -2187,6 +2443,36 @@ class MainWindow(QMainWindow):
         custom_apps = [a for a in apps if a not in known_preset_ids]
         self.txt_custom_winget.setText(", ".join(custom_apps))
 
+        # Synchronisation de la Logithèque WinGet Bundler
+        if hasattr(self, "app_checkboxes"):
+            for wid, chk in self.app_checkboxes.items():
+                chk.setChecked(wid in apps)
+            self._update_apps_counter()
+
+        # Virtualisation & Gaming VBS
+        virt_opt = getattr(profile, "virtualization", None)
+        if virt_opt:
+            self.chk_virt_vbs.setChecked(virt_opt.disable_vbs_hvci)
+            self.chk_virt_spectre.setChecked(virt_opt.disable_spectre_meltdown_mitigations)
+            self.chk_virt_wsl.setChecked(virt_opt.enable_wsl2)
+            self.chk_virt_sandbox.setChecked(virt_opt.enable_sandbox)
+            self.chk_virt_hyperv.setChecked(virt_opt.enable_hyperv)
+
+        # Sécurité & Windows Update
+        sec_opt = getattr(profile, "security", None)
+        if sec_opt:
+            wu_pol = sec_opt.windows_update_policy.value if hasattr(sec_opt.windows_update_policy, "value") else str(sec_opt.windows_update_policy)
+            for i in range(self.cb_wu_policy.count()):
+                if self.cb_wu_policy.itemData(i) == wu_pol:
+                    self.cb_wu_policy.setCurrentIndex(i)
+                    break
+            self.chk_sec_block_driver_updates.setChecked(sec_opt.block_driver_updates)
+            self.chk_sec_block_hosts.setChecked(sec_opt.block_telemetry_hosts)
+            self.chk_sec_disable_diagtrack.setChecked(sec_opt.disable_tracking_services)
+            self.chk_sec_deep_privacy.setChecked(sec_opt.deep_privacy_hardening)
+
+        self.chk_generate_checksum.setChecked(getattr(profile, "generate_checksum", True))
+
         # OOBE
         self.txt_admin_user.setText(profile.unattended.admin_username or "Administrateur")
         self.txt_computer_name.setText(profile.unattended.computer_name or "LORDMADTRIX-PC")
@@ -2557,7 +2843,41 @@ class MainWindow(QMainWindow):
                 pkg = item.strip()
                 if pkg and pkg not in selected_apps:
                     selected_apps.append(pkg)
+
+        # Collecte depuis l'onglet Logithèque WinGet Bundler
+        if hasattr(self, "app_checkboxes"):
+            for wid, chk in self.app_checkboxes.items():
+                if chk.isChecked() and wid not in selected_apps:
+                    selected_apps.append(wid)
+        if hasattr(self, "txt_custom_winget_tab"):
+            extra_custom = self.txt_custom_winget_tab.text().strip()
+            if extra_custom:
+                for item in extra_custom.split(","):
+                    pkg = item.strip()
+                    if pkg and pkg not in selected_apps:
+                        selected_apps.append(pkg)
+
         new_profile.post_install.winget_apps = selected_apps
+
+        # Virtualisation & Gaming VBS
+        new_profile.virtualization = VirtualizationOptions(
+            disable_vbs_hvci=self.chk_virt_vbs.isChecked(),
+            disable_spectre_meltdown_mitigations=self.chk_virt_spectre.isChecked(),
+            enable_wsl2=self.chk_virt_wsl.isChecked(),
+            enable_sandbox=self.chk_virt_sandbox.isChecked(),
+            enable_hyperv=self.chk_virt_hyperv.isChecked(),
+        )
+
+        # Sécurité & Windows Update
+        new_profile.security = SecurityOptions(
+            windows_update_policy=WindowsUpdatePolicy(self.cb_wu_policy.currentData() or "notify_only"),
+            block_driver_updates=self.chk_sec_block_driver_updates.isChecked(),
+            block_telemetry_hosts=self.chk_sec_block_hosts.isChecked(),
+            disable_tracking_services=self.chk_sec_disable_diagtrack.isChecked(),
+            deep_privacy_hardening=self.chk_sec_deep_privacy.isChecked(),
+        )
+
+        new_profile.generate_checksum = self.chk_generate_checksum.isChecked()
 
         new_profile.unattended.admin_username = self.txt_admin_user.text().strip() or "Administrateur"
         new_profile.unattended.computer_name = self.txt_computer_name.text().strip() or "LORDMADTRIX-PC"

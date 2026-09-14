@@ -86,6 +86,39 @@ Que ce soit pour ressusciter une machine sous **Windows 7** avec prise en charge
   - 🛡️ **Durcissement Sécurité** : Désactive SMBv1, Telnet, TFTP et active Windows Sandbox.
   - ⚡ **Ultra-Lite** : Épuration maximale des capacités et fonctionnalités inutilisées.
 
+### 📦 7. Logithèque & WinGet Bundler Intégré (`AppBundler`)
+- **Catalogue Visuel de 30+ Applications Références** :
+  - **Gaming & Streaming** : Steam, Discord, OBS Studio, MSI Afterburner, Heroic Games Launcher, Prism Launcher.
+  - **Développement & Shell** : Visual Studio Code, Git, Python 3.12, Node.js LTS, Windows Terminal, PowerToys, Notepad++.
+  - **Runtimes & Essentiels** : Visual C++ All-In-One (2005-2022), DirectX End-User Runtimes, .NET 8.0, 7-Zip.
+  - **Navigateurs Web** : Mozilla Firefox, Brave Browser, Google Chrome, LibreWolf.
+  - **Utilitaires & Diagnostic** : HWiNFO64, CrystalDiskInfo, System Informer, Everything, Geek Uninstaller, BleachBit.
+- **Déploiement Silencieux Zéro-Clic** : Génération automatique de scripts PowerShell avec résilience réseau, gestion des accords de licence (`--accept-source-agreements`) et journalisation détaillée dans `C:\Windows\Temp\winget_install.log`.
+
+### 🚀 8. Tuning Kernel & Bypass VBS / HVCI Esport (`VirtualizationManager`)
+- **Neutralisation de VBS & HVCI Memory Integrity** :
+  - Élimine la virtualisation de sécurité au niveau du noyau pour débloquer **+5% à +15% de framerate** en jeu CPU-dépendant et supprimer totalement les micro-stutters.
+- **Atténuations CPU Spectre / Meltdown Optionnelles** :
+  - Réduction de l'overhead des commutations de contexte CPU pour machines de tournois ou bancs de test isolés.
+- **Sous-systèmes Modernes en 1 Clic** :
+  - Active à la demande **WSL2** (Windows Subsystem for Linux), **Windows Sandbox** et **Hyper-V**.
+
+### 🛡️ 9. Durcissement Sécurité & Politique Windows Update GPO (`SecurityHardener`)
+- **Politique Windows Update Maîtrisée** :
+  - `notify_only` : Avertir avant tout téléchargement/installation (interdit les redémarrages forcés en plein travail ou jeu).
+  - `security_only` : Uniquement les correctifs de sécurité critiques (bloque le déploiement forcé de bloatwares).
+  - `disabled` : Désactivation totale pour kiosks et bornes de test.
+- **Blocage de Pilotes Sauvages** :
+  - Active `ExcludeWUDriversInQualityUpdate = 1` pour empêcher Windows Update d'écraser vos pilotes graphiques ou audio optimisés.
+- **Blocage DNS & Fichier Hosts de la Télémétrie** :
+  - Injection automatique de `0.0.0.0 telemetry.microsoft.com`, `v10.events.data.microsoft.com`, `activity.windows.com` directement dans le fichier `hosts` hors-ligne de l'image.
+  - Neutralisation définitive de **Windows Recall (24H2)**, **Copilot**, **Timeline** et des services `DiagTrack` / `dmwappushservice`.
+
+### 🔐 10. Empreintes Cryptographiques & Norme GNU sha256sum (`IsoValidator`)
+- **Sommes de Contrôle Automatiques** : Génération d'un fichier `.sha256` certifié aux normes `sha256sum` à côté de l'ISO créé.
+- **Outil d'Audit Graphique Dédié** : Calcul multithreadé séquentiel par blocs (empreinte RAM < 5 Mo même sur des images de 10 Go) et comparateur d'empreinte officiel en direct dans l'interface Studio.
+
+
 ---
 
 ## 🎨 Moteur Multi-Thèmes Dynamique

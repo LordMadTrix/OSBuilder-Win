@@ -25,6 +25,10 @@ from core.update_manager import UpdateManager
 from core.image_optimizer import ImageOptimizer
 from core.features_manager import FeaturesManager
 from core.software_installer import SoftwareInstaller
+from core.virtualization_manager import VirtualizationManager
+from core.security_hardener import SecurityHardener, WindowsUpdatePolicy
+from core.network_optimizer import NetworkOptimizer
+from core.app_bundler import AppBundler
 
 
 class BuildPipeline:
@@ -215,6 +219,14 @@ class BuildPipeline:
             except Exception as e:
                 self.log(f"[ATTENTION] Impossible de générer le rapport : {e}")
 
+            # 8. Génération de la somme de contrôle SHA256 (Norme GNU sha256sum)
+            if getattr(self.profile, "generate_checksum", True):
+                try:
+                    chk_file = IsoValidator.generate_checksum_file(output_iso, algorithm="sha256")
+                    self.log(f"[SÉCURITÉ] Empreinte SHA256 certifiée générée : {chk_file.name}")
+                except Exception as e:
+                    self.log(f"[ATTENTION] Impossible de générer la somme de contrôle : {e}")
+
             self.log("=" * 65)
             self.log(f"[SUCCÈS] Le build s'est terminé avec succès ! Fichier : {output_iso}")
             self.log("👑 Forgeage terminé • Signé par l'Architecture LordMadTrix ⚡")
@@ -320,6 +332,17 @@ class BuildPipeline:
             for feat in self.profile.disable_features:
                 self.dism.disable_feature(self.mount_dir, feat)
 
+            # 4a-bis. Fonctionnalités de virtualisation (WSL2, Sandbox, Hyper-V)
+            if getattr(self.profile, "virtualization", None):
+                virt_feats = VirtualizationManager.get_features_for_profile(
+                    enable_wsl=self.profile.virtualization.enable_wsl2,
+                    enable_sandbox=self.profile.virtualization.enable_sandbox,
+                    enable_hyperv=self.profile.virtualization.enable_hyperv
+                )
+                for vf in virt_feats:
+                    self.log(f"[VIRTUALISATION] Activation : {vf}")
+                    self.dism.enable_feature(self.mount_dir, vf)
+
             # 4b. Fonctionnalités système avancées (.NET 3.5 & DirectPlay)
             if self.profile.system_features.enable_net35:
                 sxs_dir = self.extracted_dir / "sources" / "sxs"
@@ -380,6 +403,29 @@ class BuildPipeline:
                     if getattr(self.profile.system_features, "optimize_dns_cache", True):
                         self.reg.apply_dns_cache_optimizations()
 
+                    # Durcissement sécurité, politique Windows Update et vie privée
+                    if getattr(self.profile, "security", None):
+                        SecurityHardener.apply_windows_update_policy(
+                            self.reg,
+                            self.profile.security.windows_update_policy,
+                            self.profile.security.block_driver_updates
+                        )
+                        if self.profile.security.deep_privacy_hardening:
+                            SecurityHardener.apply_deep_privacy_hardening(self.reg)
+                        if self.profile.security.disable_tracking_services:
+                            SecurityHardener.disable_tracking_services(self.reg)
+
+                    # Virtualisation & Gaming VBS/HVCI
+                    if getattr(self.profile, "virtualization", None):
+                        if self.profile.virtualization.disable_vbs_hvci:
+                            VirtualizationManager.apply_gaming_vbs_tweaks(self.reg)
+                        if self.profile.virtualization.disable_spectre_meltdown_mitigations:
+                            VirtualizationManager.apply_spectre_meltdown_gaming_override(self.reg)
+
+                    # Optimisations Réseau avancées
+                    if getattr(self.profile.system_features, "disable_nagle_algorithm", True) or self.profile.enable_gaming_tweaks:
+                        NetworkOptimizer.apply_tcp_gaming_tweaks(self.reg)
+
                     if self.profile.target_os == TargetOS.WIN11:
                         if self.profile.win11.classic_context_menu:
                             self.reg.apply_win11_classic_context_menu()
@@ -407,6 +453,10 @@ class BuildPipeline:
                 finally:
                     self.reg.unload_hives()
 
+            # Blocage des hôtes de télémétrie dans Windows\System32\drivers\etc\hosts
+            if getattr(self.profile, "security", None) and self.profile.security.block_telemetry_hosts:
+                SecurityHardener.inject_telemetry_hosts_blocklist(self.mount_dir)
+
             # 6. Injection et génération dynamique de SetupComplete.cmd
             scripts_dir = self.mount_dir / "Windows" / "Setup" / "Scripts"
             scripts_dir.mkdir(parents=True, exist_ok=True)
@@ -428,6 +478,11 @@ class BuildPipeline:
                 for cmd_line in custom_cmds:
                     if cmd_line.strip():
                         content += f"{cmd_line.strip()}\r\n"
+
+            # 6a-bis. Optimisation Réseau & Configuration DNS
+            dns_choice = getattr(self.profile.system_features, "dns_preset", None)
+            net_script = NetworkOptimizer.generate_setupcomplete_network_script(dns_choice)
+            content += f"\r\n{net_script}\r\n"
 
             # 6b. Intégration des scripts personnalisés déposés dans custom_scripts/
             custom_scripts_dir = Path(__file__).resolve().parent.parent / "custom_scripts"

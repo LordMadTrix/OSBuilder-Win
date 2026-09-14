@@ -1030,6 +1030,144 @@ class TestOSBuilder(unittest.TestCase):
             self.assertTrue(loaded.optimize_wim)
 
 
+    def test_app_bundler_catalog(self):
+        from core.app_bundler import AppBundler
+        catalog = AppBundler.get_catalog()
+        self.assertGreater(len(catalog), 15)
+        
+        categories = AppBundler.get_categories()
+        self.assertIn("gaming", categories)
+        self.assertIn("dev_tools", categories)
+        self.assertIn("runtimes", categories)
+        
+        gaming_apps = AppBundler.get_apps_by_category("gaming")
+        self.assertTrue(any(a.id == "steam" for a in gaming_apps))
+        
+        app_7z = AppBundler.get_app_by_id("sevenzip")
+        self.assertIsNotNone(app_7z)
+        self.assertEqual(app_7z.winget_id, "7zip.7zip")
+
+    def test_app_bundler_scripts(self):
+        from core.app_bundler import AppBundler
+        ps_script = AppBundler.generate_winget_powershell_script(["7zip.7zip", "Valve.Steam"])
+        self.assertIn("7zip.7zip", ps_script)
+        self.assertIn("Valve.Steam", ps_script)
+        self.assertIn("install --id", ps_script)
+
+        offline_script = AppBundler.generate_offline_apps_installer_script(r"C:\TestApps")
+        self.assertIn("msiexec.exe", offline_script)
+        self.assertIn("/VERYSILENT", offline_script)
+
+    def test_virtualization_manager(self):
+        from core.virtualization_manager import VirtualizationManager
+        from unittest.mock import MagicMock
+        
+        feats = VirtualizationManager.get_features_for_profile(enable_wsl=True, enable_sandbox=True)
+        self.assertIn("VirtualMachinePlatform", feats)
+        self.assertIn("Microsoft-Windows-Subsystem-Linux", feats)
+        self.assertIn("Containers-DisposableClientVM", feats)
+
+        mock_reg = MagicMock()
+        res_vbs = VirtualizationManager.apply_gaming_vbs_tweaks(mock_reg)
+        self.assertTrue(res_vbs)
+        calls = mock_reg.set_value.call_args_list
+        self.assertTrue(any("EnableVirtualizationBasedSecurity" in str(c) for c in calls))
+
+        mock_reg.reset_mock()
+        res_spectre = VirtualizationManager.apply_spectre_meltdown_gaming_override(mock_reg)
+        self.assertTrue(res_spectre)
+        calls_spectre = mock_reg.set_value.call_args_list
+        self.assertTrue(any("FeatureSettingsOverride" in str(c) for c in calls_spectre))
+
+    def test_security_hardener(self):
+        from core.security_hardener import SecurityHardener, WindowsUpdatePolicy
+        from unittest.mock import MagicMock
+        import tempfile
+
+        mock_reg = MagicMock()
+        res = SecurityHardener.apply_windows_update_policy(
+            mock_reg, policy=WindowsUpdatePolicy.NOTIFY_ONLY, block_driver_updates=True
+        )
+        self.assertTrue(res)
+        calls = mock_reg.set_value.call_args_list
+        self.assertTrue(any("ExcludeWUDriversInQualityUpdate" in str(c) for c in calls))
+        self.assertTrue(any("AUOptions" in str(c) for c in calls))
+
+        mock_reg.reset_mock()
+        res_priv = SecurityHardener.apply_deep_privacy_hardening(mock_reg)
+        self.assertTrue(res_priv)
+        calls_priv = mock_reg.set_value.call_args_list
+        self.assertTrue(any("DisableAIDataAnalysis" in str(c) for c in calls_priv))
+        self.assertTrue(any("TurnOffWindowsCopilot" in str(c) for c in calls_priv))
+
+        # Test hosts blocklist injection
+        with tempfile.TemporaryDirectory() as td:
+            etc_dir = Path(td) / "Windows" / "System32" / "drivers" / "etc"
+            etc_dir.mkdir(parents=True)
+            hosts_file = etc_dir / "hosts"
+            hosts_file.write_text("127.0.0.1 localhost\n", encoding="utf-8")
+
+            injected = SecurityHardener.inject_telemetry_hosts_blocklist(td)
+            self.assertTrue(injected)
+            content = hosts_file.read_text(encoding="utf-8")
+            self.assertIn("telemetry.microsoft.com", content)
+
+    def test_network_optimizer(self):
+        from core.network_optimizer import NetworkOptimizer
+        from unittest.mock import MagicMock
+
+        preset = NetworkOptimizer.get_dns_preset("cloudflare")
+        self.assertIsNotNone(preset)
+        self.assertEqual(preset.primary_ipv4, "1.1.1.1")
+
+        mock_reg = MagicMock()
+        res_tcp = NetworkOptimizer.apply_tcp_gaming_tweaks(mock_reg)
+        self.assertTrue(res_tcp)
+        calls = mock_reg.set_value.call_args_list
+        self.assertTrue(any("NetworkThrottlingIndex" in str(c) for c in calls))
+        self.assertTrue(any("TcpAckFrequency" in str(c) for c in calls))
+
+        script = NetworkOptimizer.generate_setupcomplete_network_script("cloudflare")
+        self.assertIn("congestionprovider=ctcp", script)
+        self.assertIn("1.1.1.1", script)
+
+    def test_iso_hash_and_checksum(self):
+        from core.iso_validator import IsoValidator
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as td:
+            test_file = Path(td) / "test_image.iso"
+            test_file.write_bytes(b"OSBUILDER_TEST_DATA_1234567890")
+
+            hashes = IsoValidator.compute_file_hashes(test_file, algorithms=["sha256", "md5"])
+            self.assertIn("sha256", hashes)
+            self.assertIn("md5", hashes)
+
+            chk_file = IsoValidator.generate_checksum_file(test_file, algorithm="sha256")
+            self.assertTrue(chk_file.exists())
+            self.assertIn(hashes["sha256"], chk_file.read_text(encoding="utf-8"))
+
+            is_valid = IsoValidator.verify_checksum(test_file, hashes["sha256"], algorithm="sha256")
+            self.assertTrue(is_valid)
+
+            is_invalid = IsoValidator.verify_checksum(test_file, "0" * 64, algorithm="sha256")
+            self.assertFalse(is_invalid)
+
+    def test_load_esport_profile(self):
+        from core.config import WindowsUpdatePolicy
+        p_path = self.root_dir / "profiles" / "esport_competitive_24h2.yaml"
+        self.assertTrue(p_path.exists())
+        prof = load_profile_from_yaml(p_path)
+        self.assertEqual(prof.target_os, TargetOS.WIN11)
+        self.assertTrue(prof.enable_gaming_tweaks)
+        self.assertTrue(prof.virtualization.disable_vbs_hvci)
+        self.assertEqual(prof.security.windows_update_policy, WindowsUpdatePolicy.NOTIFY_ONLY)
+        self.assertTrue(prof.security.block_driver_updates)
+        self.assertTrue(prof.system_features.disable_nagle_algorithm)
+        self.assertEqual(prof.system_features.dns_preset, "cloudflare")
+        self.assertTrue(prof.generate_checksum)
+
+
 if __name__ == "__main__":
     unittest.main()
 

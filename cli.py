@@ -229,6 +229,9 @@ def main():
     parser.add_argument("--cleanup-store", action="store_true", help="Nettoie et compresse le magasin WinSxS (/StartComponentCleanup /ResetBase, gain 1-3 Go)")
     parser.add_argument("--taskbar-left", action="store_true", help="Aligne la barre des tâches à gauche (style Windows 10/7 classique)")
     parser.add_argument("--disable-chat", action="store_true", help="Masque l'icône Chat/Teams de la barre des tâches")
+    parser.add_argument("--disable-vbs", action="store_true", help="Désactive VBS/HVCI pour maximiser les FPS et la réactivité gaming")
+    parser.add_argument("--wu-policy", choices=["default", "security_only", "notify_only", "disabled"], default=None, help="Politique de mise à jour Windows Update")
+    parser.add_argument("--no-checksum", action="store_true", help="Désactive la génération de la somme de contrôle SHA256")
 
     args = parser.parse_args()
 
@@ -275,6 +278,13 @@ def main():
             prof.win11.taskbar_align_left = True
         if args.disable_chat:
             prof.win11.disable_taskbar_chat = True
+        if args.disable_vbs:
+            prof.virtualization.disable_vbs_hvci = True
+        if args.wu_policy:
+            from core.config import WindowsUpdatePolicy
+            prof.security.windows_update_policy = WindowsUpdatePolicy(args.wu_policy)
+        if args.no_checksum:
+            prof.generate_checksum = False
 
         pipeline = BuildPipeline(prof, log_callback=lambda m: console.print(f"[dim]{m}[/dim]"))
         pipeline.run(Path(args.iso), Path(args.output))

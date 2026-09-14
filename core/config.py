@@ -137,11 +137,35 @@ class FeaturesOptions(BaseModel):
     features_preset: Optional[str] = None  # Profil prédéfini FOD ('gaming', 'developer', 'hardened', 'superlite')
 
 
+class WindowsUpdatePolicy(str, Enum):
+    DEFAULT = "default"              # Comportement standard Windows Update
+    SECURITY_ONLY = "security_only"  # MàJ de sécurité uniquement, exclut pilotes et mises à niveau
+    NOTIFY_ONLY = "notify_only"      # Notifier avant téléchargement et installation
+    DISABLED = "disabled"            # Désactiver totalement le service Windows Update
+
+
+class VirtualizationOptions(BaseModel):
+    enable_wsl2: bool = False  # Active WSL2 et la plateforme de machine virtuelle
+    enable_sandbox: bool = False  # Active le bac à sable Windows Sandbox
+    enable_hyperv: bool = False  # Active l'hyperviseur Hyper-V natif
+    disable_vbs_hvci: bool = True  # Désactive VBS / HVCI (Memory Integrity) pour +5-15% FPS et 0 micro-saccades en jeu
+    disable_spectre_meltdown_mitigations: bool = False  # Désactive les atténuations logicielles CPU pour machines de tournoi
+
+
+class SecurityOptions(BaseModel):
+    windows_update_policy: WindowsUpdatePolicy = WindowsUpdatePolicy.NOTIFY_ONLY
+    block_driver_updates: bool = True  # Empêche Windows Update d'écraser les pilotes graphiques/audio
+    block_telemetry_hosts: bool = True  # Bloque les serveurs d'espionnage Microsoft dans le fichier hosts
+    disable_tracking_services: bool = True  # Neutralise DiagTrack et dmwappushservice
+    deep_privacy_hardening: bool = True  # Neutralise Recall, Copilot, Timeline et publicité ciblée
+
+
 class PostInstallOptions(BaseModel):
     install_vcredist: bool = True  # Visual C++ Redistributable All-In-One
     winget_apps: List[str] = Field(default_factory=list)  # Identifiants WinGet (ex: 7zip.7zip)
     enable_hwid_activation: bool = False  # Activation permanente HWID (Massgrave) au 1er boot
     offline_apps_dir: Optional[str] = None  # Dossier local d'installateurs (.exe, .msi) à intégrer dans Windows\Setup\Apps\
+
 
 
 class RegistryTweakRule(BaseModel):
@@ -188,6 +212,8 @@ class BuildProfile(BaseModel):
     system_features: FeaturesOptions = Field(default_factory=FeaturesOptions)
     post_install: PostInstallOptions = Field(default_factory=PostInstallOptions)
     oem: OemOptions = Field(default_factory=OemOptions)
+    virtualization: VirtualizationOptions = Field(default_factory=VirtualizationOptions)
+    security: SecurityOptions = Field(default_factory=SecurityOptions)
 
     # Spécificités OS
     win7: Win7Options = Field(default_factory=Win7Options)
@@ -196,12 +222,13 @@ class BuildProfile(BaseModel):
     # Automatisation
     unattended: UnattendedConfig = Field(default_factory=UnattendedConfig)
     
-    # Optimisation de taille & Découpage WIM
+    # Optimisation de taille, Découpage WIM & Intégrité
     single_edition_only: bool = False  # N'exporter que l'édition cible choisie pour alléger l'ISO de 40%
     compression_type: CompressionType = CompressionType.MAXIMUM  # Type de compression wim/esd
     split_wim_fat32: bool = False  # Découpage WIM pour compatibilité FAT32 / Clé USB UEFI
     cleanup_component_store: bool = False  # Nettoyage WinSxS /StartComponentCleanup /ResetBase pour alléger install.wim de 1 à 3 Go
     optimize_wim: bool = True  # Recompression et défragmentation du WIM pour éliminer les clusters orphelins
+    generate_checksum: bool = True  # Génère un fichier .sha256 conforme GNU sha256sum à côté de l'ISO généré
 
     # Scripts post-installation
     post_install_scripts: List[str] = Field(default_factory=list)
