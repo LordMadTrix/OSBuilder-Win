@@ -17,7 +17,7 @@ from typing import Optional, List, Dict, Any
 import webbrowser
 
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize
-from PyQt6.QtGui import QFont, QColor, QTextCursor, QIcon, QKeySequence
+from PyQt6.QtGui import QFont, QColor, QTextCursor, QIcon, QKeySequence, QPixmap
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QGridLayout, QTabWidget, QLabel, QLineEdit, QPushButton, QFileDialog,
@@ -786,23 +786,44 @@ class MainWindow(QMainWindow):
         """Affiche la boîte de dialogue de signature officielle LordMadTrix."""
         dialog = QDialog(self)
         dialog.setWindowTitle("👑 Signature Officielle — LordMadTrix")
-        dialog.setFixedSize(540, 420)
+        dialog.setFixedSize(560, 520)
         dialog.setStyleSheet("background-color: #0d1117; color: #f0f6fc;")
 
         layout = QVBoxLayout(dialog)
-        layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(14)
+        layout.setContentsMargins(24, 18, 24, 18)
+        layout.setSpacing(12)
+
+        # Logo de marque officiel (docs/lordmadtrix_logo.png ou global)
+        logo_paths = [
+            Path(__file__).parent / "docs" / "lordmadtrix_logo.png",
+            Path(r"C:\Users\madtr\.gemini\branding\lordmadtrix_logo.png")
+        ]
+        for lp in logo_paths:
+            if lp.exists():
+                lbl_logo = QLabel()
+                pix = QPixmap(str(lp))
+                if not pix.isNull():
+                    scaled_pix = pix.scaledToWidth(180, Qt.TransformationMode.SmoothTransformation)
+                    lbl_logo.setPixmap(scaled_pix)
+                    lbl_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    layout.addWidget(lbl_logo)
+                    break
 
         # En-tête néon
         header_lbl = QLabel("⚡ ÉDITION SIGNATURE OFFICIELLE ⚡")
         header_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        header_lbl.setStyleSheet("color: #00f0ff; font-size: 16px; font-weight: 900; letter-spacing: 1px;")
+        header_lbl.setStyleSheet("color: #00f0ff; font-size: 15px; font-weight: 900; letter-spacing: 1px;")
         layout.addWidget(header_lbl)
 
         author_lbl = QLabel("LordMadTrix")
         author_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        author_lbl.setStyleSheet("color: #ffffff; font-size: 26px; font-weight: 800;")
+        author_lbl.setStyleSheet("color: #ffffff; font-size: 24px; font-weight: 800;")
         layout.addWidget(author_lbl)
+
+        tagline_lbl = QLabel("Architecte Systèmes • Immersion VR & Gaming • Optimisation OS & IA")
+        tagline_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        tagline_lbl.setStyleSheet("color: #38ef7d; font-size: 11px; font-weight: 600;")
+        layout.addWidget(tagline_lbl)
 
         desc_lbl = QLabel(
             "Créateur, Architecte & Développeur en chef de la suite OSBuilder-Win Studio et de l'écosystème MadOS.\n\n"
@@ -811,9 +832,14 @@ class MainWindow(QMainWindow):
             "• Débridage universel du matériel (Bypass TPM, SecureBoot, CPU, RAM)\n"
             "• Automatisation zéro-clic et servicing DISM / Registry haute performance"
         )
-        desc_lbl.setStyleSheet("color: #8b9bb4; font-size: 13px; line-height: 1.5; padding: 10px; background-color: #161b22; border-radius: 8px; border: 1px solid #30363d;")
+        desc_lbl.setStyleSheet("color: #8b9bb4; font-size: 12px; line-height: 1.4; padding: 10px; background-color: #161b22; border-radius: 8px; border: 1px solid #30363d;")
         desc_lbl.setWordWrap(True)
         layout.addWidget(desc_lbl)
+
+        quote_lbl = QLabel("« Forger l'excellence technologique au cœur du code et de l'immersion. »")
+        quote_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        quote_lbl.setStyleSheet("color: #8b9bb4; font-size: 11px; font-style: italic;")
+        layout.addWidget(quote_lbl)
 
         btn_row = QHBoxLayout()
         btn_github = QPushButton("🌐 Profil GitHub LordMadTrix")

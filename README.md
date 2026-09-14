@@ -196,7 +196,20 @@ OK (100% pass rate)
 
 ---
 
+## 👑 Signature & Auteur Officiel
+
 <div align="center">
-  <sub>Développé avec passion pour l'écosystème LordMadTrix. Tous droits réservés © 2026.</sub>
+
+<a href="https://github.com/LordMadTrix">
+  <img src="https://raw.githubusercontent.com/LordMadTrix/OSBuilder-Win/main/docs/lordmadtrix_logo.png" alt="LordMadTrix Official Brand" width="180" />
+</a>
+
+### ⚡ Conçu & Forgé par **[LordMadTrix](https://github.com/LordMadTrix)** ⚡
+*Architecte Systèmes • Immersion VR & Gaming • Optimisation OS & IA*
+
+[![GitHub Profile](https://img.shields.io/badge/GitHub-LordMadTrix-181717?style=for-the-badge&logo=github)](https://github.com/LordMadTrix)
+
+*« Forger l'excellence technologique au cœur du code et de l'immersion. »*
+
 </div>
 

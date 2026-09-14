@@ -5,6 +5,14 @@ using System.IO;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
+[assembly: System.Reflection.AssemblyTitle("OSBuilder-Win Studio Installer")]
+[assembly: System.Reflection.AssemblyDescription("Assistant d'installation officiel OSBuilder-Win Studio")]
+[assembly: System.Reflection.AssemblyCompany("LordMadTrix")]
+[assembly: System.Reflection.AssemblyProduct("OSBuilder-Win Studio PRO")]
+[assembly: System.Reflection.AssemblyCopyright("Copyright © 2026 LordMadTrix")]
+[assembly: System.Reflection.AssemblyVersion("2.5.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("2.5.0.0")]
+
 namespace OSBuilderInstaller
 {
     public class SetupForm : Form
