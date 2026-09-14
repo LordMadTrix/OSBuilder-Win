@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 from typing import Callable, Optional
 
-from core.config import BuildProfile, TargetOS, AppxPreset
+from core.config import BuildProfile, TargetOS, AppxPreset, CompressionType
 from core.dism_manager import DismManager
 from core.iso_extractor import IsoExtractor
 from core.iso_builder import IsoBuilder
@@ -22,6 +22,9 @@ from core.iso_validator import IsoValidator
 from core.appx_catalog import get_patterns_for_preset
 from core.oem_manager import OemManager
 from core.update_manager import UpdateManager
+from core.image_optimizer import ImageOptimizer
+from core.features_manager import FeaturesManager
+from core.software_installer import SoftwareInstaller
 
 
 class BuildPipeline:
@@ -100,6 +103,10 @@ class BuildPipeline:
             if not install_img.exists() or not boot_wim.exists():
                 raise FileNotFoundError("Image install (wim/esd) ou boot.wim introuvable dans l'ISO extraite.")
 
+            # 1b. Neutralisation matérielle universelle pour Windows 11 (appraiserres.dll)
+            if self.profile.target_os == TargetOS.WIN11:
+                self.win11.patch_extracted_sources(self.extracted_dir)
+
             # Capture automatique des pilotes réseau (Wi-Fi/LAN) hôte si demandée
             if self.profile.auto_inject_host_network_drivers:
                 self.log("[PILOTES] Capture automatique des pilotes réseau de la machine hôte...")
@@ -141,6 +148,10 @@ class BuildPipeline:
 
             # 4. Patch du install.wim (Système d'exploitation cible)
             self._process_install_wim(install_img)
+            self._check_cancellation()
+
+            # 4b. Optimisation et Recompression de l'image (WIM / ESD)
+            install_img = self._optimize_and_recompress_image(install_img)
             self._check_cancellation()
 
             # 5. Automatisation (autounattend.xml)
@@ -293,7 +304,12 @@ class BuildPipeline:
             if appx_patterns and self.profile.target_os in (TargetOS.WIN10, TargetOS.WIN11):
                 self.dism.remove_appx_by_patterns(self.mount_dir, appx_patterns)
 
-            # 4. Activation / Désactivation de fonctionnalités
+            # 4. Profil de fonctionnalités prédéfini (FeaturesManager)
+            if getattr(self.profile.system_features, "features_preset", None):
+                feat_mgr = FeaturesManager(self.log)
+                feat_mgr.apply_preset(self.mount_dir, self.dism, self.profile.system_features.features_preset)
+
+            # 4a. Activation / Désactivation manuelle de fonctionnalités
             for feat in self.profile.enable_features:
                 self.dism.enable_feature(self.mount_dir, feat)
             for feat in self.profile.disable_features:
@@ -342,9 +358,22 @@ class BuildPipeline:
 
                     # Réglages de l'Explorateur et de l'apparence
                     self.reg.apply_explorer_tweaks(self.profile.explorer)
+                    self.reg.apply_context_menu_pro(self.profile.explorer)
 
                     # Optimisations des services système
                     self.reg.apply_services_tweaks(self.profile.services)
+                    if getattr(self.profile.services, "disable_automatic_maintenance", True):
+                        self.reg.disable_automatic_maintenance()
+
+                    # Optimisations Defender pour le Gaming
+                    if getattr(self.profile.system_features, "defender_gaming_exclusions", True):
+                        self.reg.apply_defender_gaming_optimizations()
+
+                    # Optimisations DNS rapides et cache DNS
+                    if getattr(self.profile.system_features, "dns_preset", None):
+                        self.reg.apply_dns_presets(self.profile.system_features.dns_preset)
+                    if getattr(self.profile.system_features, "optimize_dns_cache", True):
+                        self.reg.apply_dns_cache_optimizations()
 
                     if self.profile.target_os == TargetOS.WIN11:
                         if self.profile.win11.classic_context_menu:
@@ -412,6 +441,16 @@ class BuildPipeline:
                 if injected_scripts_count > 0:
                     self.log(f"[SCRIPTS] {injected_scripts_count} script(s) personnalisé(s) injecté(s) depuis custom_scripts/")
 
+            # 6c. Intégration des applications hors-ligne packagées
+            if getattr(self.profile.post_install, "offline_apps_dir", None):
+                installer = SoftwareInstaller(self.log)
+                staged = installer.stage_offline_applications(self.profile.post_install.offline_apps_dir, self.mount_dir)
+                if staged:
+                    cmds = [cmd for _, cmd in staged]
+                    apps_script = installer.generate_apps_install_script(self.mount_dir, cmds)
+                    if apps_script:
+                        content += '\r\ncall "%~dp0InstallApps.cmd"\r\n'
+
             with open(setup_complete_path, "w", encoding="utf-8") as f:
                 f.write(content)
             self.log(f"Script SetupComplete.cmd généré et injecté dans Windows\\Setup\\Scripts\\ ({len(custom_cmds)} commandes personnalisées).")
@@ -428,6 +467,28 @@ class BuildPipeline:
         except Exception:
             self.dism.unmount_image(self.mount_dir, commit=False)
             raise
+
+    def _optimize_and_recompress_image(self, install_img: Path) -> Path:
+        """Optimise et recompresse l'image install.wim (ou conversion ESD) pour minimiser la taille de l'ISO."""
+        optimizer = ImageOptimizer(self.log)
+        comp_type = getattr(self.profile.compression_type, "value", "maximum").lower()
+
+        # Si l'utilisateur demande une compression ESD / RECOVERY
+        if self.profile.compression_type == CompressionType.RECOVERY or comp_type in ("recovery", "esd"):
+            self.log("[OPTIMISATION] Conversion de install.wim en format compact ESD (Compression ultra LZMS)...")
+            target_esd = install_img.parent / "install.esd"
+            esd_res = optimizer.convert_wim_to_esd(install_img, target_esd, index=1)
+            if esd_res and esd_res.exists():
+                install_img.unlink()
+                self.log(f"[OK] Image d'installation convertie en ESD avec succès : {esd_res.name}")
+                return esd_res
+
+        # Défragmentation et nettoyage des clusters orphelins WIM
+        if getattr(self.profile, "optimize_wim", True) or getattr(self.profile, "cleanup_component_store", False):
+            self.log("[OPTIMISATION] Défragmentation et recompression du conteneur WIM...")
+            optimizer.optimize_wim(install_img, compression=comp_type)
+
+        return install_img
 
     def _split_wim_fat32(self, wim_path: Path) -> bool:
         """Découpe install.wim en fichiers install.swm (< 3800 Mo) pour compatibilité clé USB FAT32."""

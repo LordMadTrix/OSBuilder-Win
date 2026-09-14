@@ -689,7 +689,7 @@ class MainWindow(QMainWindow):
         title_row = QHBoxLayout()
         title_lbl = QLabel("OSBuilder-Win Studio")
         title_lbl.setStyleSheet("color: #00d2ff; font-size: 22px; font-weight: 800; letter-spacing: 0.5px;")
-        version_lbl = QLabel("v2.3 PRO")
+        version_lbl = QLabel("v2.5 PRO")
         version_lbl.setStyleSheet(
             "background-color: #1e293b; color: #38ef7d; font-size: 11px; font-weight: bold; "
             "padding: 2px 8px; border-radius: 4px; border: 1px solid #2e3d55;"
@@ -1204,11 +1204,25 @@ class MainWindow(QMainWindow):
         self.chk_reserved_storage = self._register_chk(QCheckBox("Désactiver l'espace réservé Windows Update (~7 Go récupérés immédiatement)"))
         self.chk_edge_prelaunch = self._register_chk(QCheckBox("Désactiver le pré-lancement en tâche de fond de Microsoft Edge"))
         self.chk_edge_telemetry = self._register_chk(QCheckBox("Désactiver la télémétrie, suggestions d'achats et annonces Microsoft Edge"))
-        self.chk_smartscreen = self._register_chk(QCheckBox("Désactiver SmartScreen pour les applications téléchargées"))
+        self.chk_defender_gaming = self._register_chk(QCheckBox("Optimiser Windows Defender pour le Gaming (Exclusions C:\\Games et D:\\Games)"))
+        self.chk_defender_gaming.setStyleSheet("color: #00e676; font-weight: bold;")
+
+        dns_box = QHBoxLayout()
+        dns_lbl = QLabel("Profil DNS Gaming & Latence :")
+        self.cb_dns_preset = QComboBox()
+        self.cb_dns_preset.addItem("Par défaut (FAI / DHCP)", "")
+        self.cb_dns_preset.addItem("Cloudflare (1.1.1.1 / 1.0.0.1) — Latence minimale", "cloudflare")
+        self.cb_dns_preset.addItem("Google Public DNS (8.8.8.8 / 8.8.4.4)", "google")
+        self.cb_dns_preset.addItem("Quad9 (9.9.9.9) — Sécurité & Filtrage malware", "quad9")
+        self.cb_dns_preset.addItem("AdGuard DNS — Bloqueur de publicités intégré", "adguard")
+        dns_box.addWidget(dns_lbl)
+        dns_box.addWidget(self.cb_dns_preset)
 
         for c in (self.chk_nagle, self.chk_hags, self.chk_ultimate_perf, self.chk_ntfs_trim,
-                  self.chk_reserved_storage, self.chk_edge_prelaunch, self.chk_edge_telemetry, self.chk_smartscreen):
+                  self.chk_reserved_storage, self.chk_edge_prelaunch, self.chk_edge_telemetry,
+                  self.chk_smartscreen, self.chk_defender_gaming):
             hw_layout.addWidget(c)
+        hw_layout.addLayout(dns_box)
         l.addWidget(grp_hw_opt)
 
         l.addStretch()
@@ -1242,8 +1256,11 @@ class MainWindow(QMainWindow):
         self.chk_restart_explorer = self._register_chk(QCheckBox("Ajouter 'Redémarrer l'Explorateur' au menu contextuel du Bureau"))
         self.chk_open_notepad = self._register_chk(QCheckBox("Ajouter 'Ouvrir avec le Bloc-notes' au menu contextuel de tous les fichiers"))
         self.chk_cmd_admin = self._register_chk(QCheckBox("Ajouter 'Invite de commandes Administrateur ici' au menu contextuel des dossiers"))
+        self.chk_powershell_admin = self._register_chk(QCheckBox("Ajouter 'Ouvrir avec PowerShell (Admin)' au menu contextuel des dossiers"))
+        self.chk_compact_os = self._register_chk(QCheckBox("Ajouter 'Compacter le dossier (CompactOS LZX)' au menu contextuel"))
 
-        for c in (self.chk_take_ownership, self.chk_restart_explorer, self.chk_open_notepad, self.chk_cmd_admin):
+        for c in (self.chk_take_ownership, self.chk_restart_explorer, self.chk_open_notepad,
+                  self.chk_cmd_admin, self.chk_powershell_admin, self.chk_compact_os):
             cl.addWidget(c)
         l.addWidget(grp_ctx)
 
@@ -1278,9 +1295,11 @@ class MainWindow(QMainWindow):
         self.chk_fast_startup = self._register_chk(QCheckBox("Désactiver Fast Startup & Hibernation (Supprime hiberfil.sys et libère sa taille en RAM)"))
         self.chk_srv_wu_reboot = self._register_chk(QCheckBox("Empêcher les redémarrages intempestifs forcés de Windows Update"))
         self.chk_srv_dosvc = self._register_chk(QCheckBox("Désactiver le service Delivery Optimization P2P (DoSvc)"))
+        self.chk_auto_maintenance = self._register_chk(QCheckBox("Neutraliser la maintenance automatique Windows (évite les réveils et saturations disque)"))
 
         for c in (self.chk_telemetry, self.chk_srv_telemetry_tasks, self.chk_srv_sysmain, self.chk_srv_indexing,
-                  self.chk_srv_spooler, self.chk_srv_wer, self.chk_fast_startup, self.chk_srv_wu_reboot, self.chk_srv_dosvc):
+                  self.chk_srv_spooler, self.chk_srv_wer, self.chk_fast_startup, self.chk_srv_wu_reboot,
+                  self.chk_srv_dosvc, self.chk_auto_maintenance):
             sl.addWidget(c)
         l.addWidget(grp_srv)
 
@@ -1298,9 +1317,10 @@ class MainWindow(QMainWindow):
 
         # Nettoyage WinSxS & Debloat AppX
         grp_deb = QGroupBox("Nettoyage WinSxS & Suppression des Bloatwares AppX")
-        dl = QVBoxLayout(grp_deb)
         self.chk_cleanup_store = self._register_chk(QCheckBox("Nettoyer et compresser le magasin WinSxS (/StartComponentCleanup /ResetBase - Gain 1-3 Go)"))
         self.chk_cleanup_store.setStyleSheet("color: #00e676; font-weight: bold;")
+        self.chk_optimize_wim = self._register_chk(QCheckBox("Recompression & défragmentation WIM (Reclaim des clusters orphelins)"))
+        self.chk_optimize_wim.setChecked(True)
         self.chk_debloat_appx = self._register_chk(QCheckBox("Supprimer les applications préinstallées UWP (Xbox, Bing, Cortana, Clipchamp...)"))
 
         preset_box = QHBoxLayout()
@@ -1314,6 +1334,7 @@ class MainWindow(QMainWindow):
         preset_box.addWidget(self.cb_appx_preset)
 
         dl.addWidget(self.chk_cleanup_store)
+        dl.addWidget(self.chk_optimize_wim)
         dl.addWidget(self.chk_debloat_appx)
         dl.addLayout(preset_box)
         l.addWidget(grp_deb)
@@ -1327,8 +1348,20 @@ class MainWindow(QMainWindow):
         self.chk_hwid_act = self._register_chk(QCheckBox("Activer Windows définitivement et automatiquement via licence numérique HWID (Massgrave)"))
         self.chk_hwid_act.setStyleSheet("color: #00e676; font-weight: bold;")
 
+        feat_preset_box = QHBoxLayout()
+        feat_preset_lbl = QLabel("Profil de Fonctionnalités & Capacités (FOD) :")
+        self.cb_features_preset = QComboBox()
+        self.cb_features_preset.addItem("Par défaut (Personnalisé)", "")
+        self.cb_features_preset.addItem("🎮 Gaming & Performance (DirectPlay, NetFx3, FOD épurés)", "gaming")
+        self.cb_features_preset.addItem("💻 Développeur & DevOps (WSL, Hyper-V, Sandbox, SSH)", "developer")
+        self.cb_features_preset.addItem("🛡️ Durcissement Sécurité (Sandbox, SMB1/Telnet désactivés)", "hardened")
+        self.cb_features_preset.addItem("⚡ Ultra-Lite (Suppression maximale des capacités)", "superlite")
+        feat_preset_box.addWidget(feat_preset_lbl)
+        feat_preset_box.addWidget(self.cb_features_preset)
+
         for c in (self.chk_net35, self.chk_directplay, self.chk_vcredist, self.chk_hwid_act):
             fl.addWidget(c)
+        fl.addLayout(feat_preset_box)
         l.addWidget(grp_feat)
 
         # Applications Post-Installation
@@ -1992,6 +2025,8 @@ class MainWindow(QMainWindow):
         self.chk_restart_explorer.setChecked(getattr(profile.explorer, "add_restart_explorer_context_menu", False))
         self.chk_open_notepad.setChecked(getattr(profile.explorer, "add_open_with_notepad", False))
         self.chk_cmd_admin.setChecked(getattr(profile.explorer, "add_cmd_admin_here", False))
+        self.chk_powershell_admin.setChecked(getattr(profile.explorer, "add_powershell_admin_context_menu", True))
+        self.chk_compact_os.setChecked(getattr(profile.explorer, "add_compact_os_context_menu", False))
         self.chk_mados_theme.setChecked(getattr(profile.explorer, "apply_mados_theme", False))
 
         # Features & Paging
@@ -2009,8 +2044,22 @@ class MainWindow(QMainWindow):
         self.chk_edge_telemetry.setChecked(getattr(profile.system_features, "disable_edge_telemetry", True))
         self.chk_smartscreen.setChecked(getattr(profile.system_features, "disable_smartscreen", False))
         self.chk_mem_paging.setChecked(getattr(profile.system_features, "optimize_memory_paging", True))
+        self.chk_defender_gaming.setChecked(getattr(profile.system_features, "defender_gaming_exclusions", True))
+        self.chk_optimize_wim.setChecked(getattr(profile, "optimize_wim", True))
         self.chk_vcredist.setChecked(profile.post_install.install_vcredist)
         self.chk_hwid_act.setChecked(profile.post_install.enable_hwid_activation)
+
+        dns_val = getattr(profile.system_features, "dns_preset", "") or ""
+        for i in range(self.cb_dns_preset.count()):
+            if self.cb_dns_preset.itemData(i) == dns_val:
+                self.cb_dns_preset.setCurrentIndex(i)
+                break
+
+        feat_val = getattr(profile.system_features, "features_preset", "") or ""
+        for i in range(self.cb_features_preset.count()):
+            if self.cb_features_preset.itemData(i) == feat_val:
+                self.cb_features_preset.setCurrentIndex(i)
+                break
 
         # Services
         self.chk_srv_sysmain.setChecked(profile.services.disable_sysmain)
@@ -2021,6 +2070,7 @@ class MainWindow(QMainWindow):
         self.chk_srv_telemetry_tasks.setChecked(getattr(profile.services, "disable_telemetry_tasks", True))
         self.chk_srv_wu_reboot.setChecked(getattr(profile.services, "disable_windows_update_auto_reboot", True))
         self.chk_srv_dosvc.setChecked(getattr(profile.services, "disable_delivery_optimization", True))
+        self.chk_auto_maintenance.setChecked(getattr(profile.services, "disable_automatic_maintenance", True))
 
         # WinGet Apps
         apps = profile.post_install.winget_apps
@@ -2357,6 +2407,8 @@ class MainWindow(QMainWindow):
         new_profile.explorer.add_restart_explorer_context_menu = self.chk_restart_explorer.isChecked()
         new_profile.explorer.add_open_with_notepad = self.chk_open_notepad.isChecked()
         new_profile.explorer.add_cmd_admin_here = self.chk_cmd_admin.isChecked()
+        new_profile.explorer.add_powershell_admin_context_menu = self.chk_powershell_admin.isChecked()
+        new_profile.explorer.add_compact_os_context_menu = self.chk_compact_os.isChecked()
         new_profile.explorer.apply_mados_theme = self.chk_mados_theme.isChecked()
 
         new_profile.system_features.enable_net35 = self.chk_net35.isChecked()
@@ -2373,6 +2425,10 @@ class MainWindow(QMainWindow):
         new_profile.system_features.disable_edge_telemetry = self.chk_edge_telemetry.isChecked()
         new_profile.system_features.disable_smartscreen = self.chk_smartscreen.isChecked()
         new_profile.system_features.optimize_memory_paging = self.chk_mem_paging.isChecked()
+        new_profile.system_features.defender_gaming_exclusions = self.chk_defender_gaming.isChecked()
+        new_profile.system_features.dns_preset = self.cb_dns_preset.currentData() or None
+        new_profile.system_features.features_preset = self.cb_features_preset.currentData() or None
+        new_profile.optimize_wim = self.chk_optimize_wim.isChecked()
         new_profile.post_install.install_vcredist = self.chk_vcredist.isChecked()
         new_profile.post_install.enable_hwid_activation = self.chk_hwid_act.isChecked()
 
@@ -2384,6 +2440,7 @@ class MainWindow(QMainWindow):
         new_profile.services.disable_telemetry_tasks = self.chk_srv_telemetry_tasks.isChecked()
         new_profile.services.disable_windows_update_auto_reboot = self.chk_srv_wu_reboot.isChecked()
         new_profile.services.disable_delivery_optimization = self.chk_srv_dosvc.isChecked()
+        new_profile.services.disable_automatic_maintenance = self.chk_auto_maintenance.isChecked()
 
         selected_apps = []
         if self.chk_app_7zip.isChecked(): selected_apps.append("7zip.7zip")
@@ -2517,6 +2574,8 @@ class MainWindow(QMainWindow):
         self.current_profile.explorer.add_restart_explorer_context_menu = self.chk_restart_explorer.isChecked()
         self.current_profile.explorer.add_open_with_notepad = self.chk_open_notepad.isChecked()
         self.current_profile.explorer.add_cmd_admin_here = self.chk_cmd_admin.isChecked()
+        self.current_profile.explorer.add_powershell_admin_context_menu = self.chk_powershell_admin.isChecked()
+        self.current_profile.explorer.add_compact_os_context_menu = self.chk_compact_os.isChecked()
         self.current_profile.explorer.apply_mados_theme = self.chk_mados_theme.isChecked()
 
         # Features
@@ -2534,6 +2593,10 @@ class MainWindow(QMainWindow):
         self.current_profile.system_features.disable_edge_telemetry = self.chk_edge_telemetry.isChecked()
         self.current_profile.system_features.disable_smartscreen = self.chk_smartscreen.isChecked()
         self.current_profile.system_features.optimize_memory_paging = self.chk_mem_paging.isChecked()
+        self.current_profile.system_features.defender_gaming_exclusions = self.chk_defender_gaming.isChecked()
+        self.current_profile.system_features.dns_preset = self.cb_dns_preset.currentData() or None
+        self.current_profile.system_features.features_preset = self.cb_features_preset.currentData() or None
+        self.current_profile.optimize_wim = self.chk_optimize_wim.isChecked()
         self.current_profile.post_install.install_vcredist = self.chk_vcredist.isChecked()
         self.current_profile.post_install.enable_hwid_activation = self.chk_hwid_act.isChecked()
 
@@ -2546,6 +2609,7 @@ class MainWindow(QMainWindow):
         self.current_profile.services.disable_telemetry_tasks = self.chk_srv_telemetry_tasks.isChecked()
         self.current_profile.services.disable_windows_update_auto_reboot = self.chk_srv_wu_reboot.isChecked()
         self.current_profile.services.disable_delivery_optimization = self.chk_srv_dosvc.isChecked()
+        self.current_profile.services.disable_automatic_maintenance = self.chk_auto_maintenance.isChecked()
 
         # Unattended
         self.current_profile.unattended.admin_username = self.txt_admin_user.text().strip() or "Administrateur"

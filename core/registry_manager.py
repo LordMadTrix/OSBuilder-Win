@@ -559,3 +559,112 @@ class RegistryManager:
             self.set_value("SYSTEM", mm_key, "ClearPageFileAtShutdown", "REG_DWORD", 0)
             self.log("[PERF] Noyau et pilotes verrouillés en RAM physique (DisablePagingExecutive=1).")
 
+    def apply_context_menu_pro(self, opts: Any) -> None:
+        """
+        Injecte les entrées avancées du menu contextuel Windows :
+        - 'Ouvrir avec PowerShell (Admin)'
+        - 'Redémarrer l'Explorateur'
+        - 'Compacter avec CompactOS (LZX)'
+        """
+        self.log("Application des entrées professionnelles du menu contextuel...")
+
+        # 1. Ouvrir avec PowerShell Administrateur
+        if getattr(opts, "add_powershell_admin_context_menu", True):
+            ps_key = r"Directory\Background\shell\PowerShellAdmin"
+            self.set_value("SOFTWARE", f"Classes\\{ps_key}", None, "REG_SZ", "Ouvrir PowerShell (Admin)")
+            self.set_value("SOFTWARE", f"Classes\\{ps_key}", "Icon", "REG_SZ", "powershell.exe")
+            self.set_value(
+                "SOFTWARE",
+                f"Classes\\{ps_key}\\command",
+                None,
+                "REG_SZ",
+                r'powershell.exe -Command "Start-Process powershell -Verb RunAs -WorkingDirectory \"%V\""'
+            )
+            self.log("[MENU] 'Ouvrir PowerShell (Admin)' ajouté au menu contextuel.")
+
+        # 2. Redémarrer l'Explorateur Windows
+        if getattr(opts, "add_restart_explorer_context_menu", False):
+            restart_key = r"DesktopBackground\shell\RestartExplorer"
+            self.set_value("SOFTWARE", f"Classes\\{restart_key}", None, "REG_SZ", "Redémarrer l'Explorateur")
+            self.set_value("SOFTWARE", f"Classes\\{restart_key}", "Icon", "REG_SZ", "explorer.exe")
+            self.set_value(
+                "SOFTWARE",
+                f"Classes\\{restart_key}\\command",
+                None,
+                "REG_SZ",
+                r'cmd.exe /c taskkill /f /im explorer.exe & start explorer.exe'
+            )
+            self.log("[MENU] 'Redémarrer l'Explorateur' ajouté au menu contextuel du Bureau.")
+
+        # 3. Compact OS (Compression de dossier LZX)
+        if getattr(opts, "add_compact_os_context_menu", False):
+            compact_key = r"Directory\shell\CompactOS"
+            self.set_value("SOFTWARE", f"Classes\\{compact_key}", None, "REG_SZ", "Compacter le dossier (CompactOS LZX)")
+            self.set_value("SOFTWARE", f"Classes\\{compact_key}", "Icon", "REG_SZ", "shell32.dll,48")
+            self.set_value(
+                "SOFTWARE",
+                f"Classes\\{compact_key}\\command",
+                None,
+                "REG_SZ",
+                r'cmd.exe /c compact.exe /c /s /i /exe:lzx \"%1\\*\"'
+            )
+            self.log("[MENU] 'Compacter le dossier (LZX)' ajouté au menu contextuel.")
+
+    def apply_dns_presets(self, preset_name: str) -> None:
+        """
+        Configure les serveurs DNS publics à ultra-faible latence (Cloudflare, Google, Quad9).
+        """
+        dns_map = {
+            "cloudflare": ("1.1.1.1,1.0.0.1", "Cloudflare DNS (1.1.1.1)"),
+            "google": ("8.8.8.8,8.8.4.4", "Google DNS (8.8.8.8)"),
+            "quad9": ("9.9.9.9,149.112.112.112", "Quad9 DNS (9.9.9.9)"),
+            "adguard": ("94.140.14.14,94.140.15.15", "AdGuard DNS (Bloqueur de pubs)"),
+        }
+        key = preset_name.lower().strip()
+        if key not in dns_map:
+            return
+
+        servers, label = dns_map[key]
+        self.log(f"[DNS] Configuration des serveurs DNS rapides : {label}...")
+        tcp_interfaces = r"ControlSet001\Services\Tcpip\Parameters\Interfaces"
+        self.set_value("SYSTEM", r"ControlSet001\Services\Tcpip\Parameters", "NameServer", "REG_SZ", servers)
+        self.set_value("SYSTEM", tcp_interfaces, "NameServer", "REG_SZ", servers)
+
+    def apply_dns_cache_optimizations(self) -> None:
+        """
+        Optimise le cache du résolveur DNS local pour éliminer les latences réseau :
+        - MaxCacheTtl = 86400 (Conserve le cache 24h)
+        - MaxNegativeCacheTtl = 5 (Réduit à 5s l'attente sur les domaines non trouvés)
+        """
+        self.log("[DNS] Optimisation des temps de cache DNS local...")
+        dns_cache_key = r"SYSTEM\ControlSet001\Services\Dnscache\Parameters"
+        self.set_value("SYSTEM", dns_cache_key, "MaxCacheTtl", "REG_DWORD", 86400)
+        self.set_value("SYSTEM", dns_cache_key, "MaxNegativeCacheTtl", "REG_DWORD", 5)
+
+    def apply_defender_gaming_optimizations(self, add_exclusions: bool = True) -> None:
+        """
+        Optimise Windows Defender pour éliminer les micro-saccades en jeu :
+        - Ajoute des exclusions automatiques pour C:\\Games et D:\\Games
+        - Désactive l'envoi d'échantillons en arrière-plan (SubmitSamplesConsent)
+        """
+        self.log("Optimisation de Windows Defender pour le Gaming...")
+        sp_key = r"SOFTWARE\Policies\Microsoft\Windows Defender\Spynet"
+        self.set_value("SOFTWARE", sp_key, "SubmitSamplesConsent", "REG_DWORD", 2)  # Never send
+        self.set_value("SOFTWARE", sp_key, "SpynetReporting", "REG_DWORD", 0)  # Disabled
+
+        if add_exclusions:
+            excl_paths = r"SOFTWARE\Microsoft\Windows Defender\Exclusions\Paths"
+            self.set_value("SOFTWARE", excl_paths, r"C:\Games", "REG_DWORD", 0)
+            self.set_value("SOFTWARE", excl_paths, r"D:\Games", "REG_DWORD", 0)
+            self.log("[DEFENDER] Exclusions de dossiers C:\\Games et D:\\Games enregistrées.")
+
+    def disable_automatic_maintenance(self) -> None:
+        """
+        Désactive la maintenance automatique de Windows qui s'exécute en arrière-plan
+        et provoque des pics de charge CPU/disque inattendus.
+        """
+        self.log("[PERF] Neutralisation de la maintenance automatique de fond...")
+        maint_key = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance"
+        self.set_value("SOFTWARE", maint_key, "MaintenanceDisabled", "REG_DWORD", 1)
+
+

@@ -97,6 +97,8 @@ class ExplorerOptions(BaseModel):
     add_restart_explorer_context_menu: bool = False  # Ajoute 'Redémarrer l'Explorateur' au menu contextuel
     add_open_with_notepad: bool = False  # Ajoute 'Ouvrir avec le Bloc-notes'
     add_cmd_admin_here: bool = False  # Ajoute 'Invite de commandes Administrateur ici'
+    add_powershell_admin_context_menu: bool = True  # Ajoute 'Ouvrir avec PowerShell (Admin)' au menu contextuel
+    add_compact_os_context_menu: bool = False  # Ajoute 'Compacter le dossier (LZX)' au menu contextuel
     apply_mados_theme: bool = False  # Applique le style d'environnement MadOS à Windows (Dark mode, accent cyan #00f0ff, DWM réactif)
     mados_accent_color: str = "#00f0ff"  # Couleur d'accentuation DWM pour le thème MadOS
 
@@ -111,6 +113,7 @@ class ServicesOptions(BaseModel):
     disable_telemetry_tasks: bool = True  # Désactive les tâches planifiées de télémétrie (Compat Tel Runner...)
     disable_windows_update_auto_reboot: bool = True  # Empêche les redémarrages inopinés lors des MàJ
     disable_delivery_optimization: bool = True  # Désactive DoSvc (partage P2P de bande passante)
+    disable_automatic_maintenance: bool = True  # Neutralise la maintenance automatique réveillant la machine ou saturant le disque
 
 
 class FeaturesOptions(BaseModel):
@@ -128,12 +131,17 @@ class FeaturesOptions(BaseModel):
     disable_edge_telemetry: bool = True  # Désactive la télémétrie, suggestions et pubs Edge
     disable_smartscreen: bool = False  # Désactive SmartScreen pour les applications téléchargées
     optimize_memory_paging: bool = True  # Maintient le noyau et drivers en RAM physique (DisablePagingExecutive)
+    defender_gaming_exclusions: bool = True  # Exclut automatiquement C:\Games et D:\Games de Windows Defender
+    dns_preset: Optional[str] = None  # Profil DNS rapide ('cloudflare', 'google', 'quad9', 'adguard')
+    optimize_dns_cache: bool = True  # Optimise le cache DNS local (MaxCacheTtl=86400, MaxNegativeCacheTtl=5)
+    features_preset: Optional[str] = None  # Profil prédéfini FOD ('gaming', 'developer', 'hardened', 'superlite')
 
 
 class PostInstallOptions(BaseModel):
     install_vcredist: bool = True  # Visual C++ Redistributable All-In-One
     winget_apps: List[str] = Field(default_factory=list)  # Identifiants WinGet (ex: 7zip.7zip)
     enable_hwid_activation: bool = False  # Activation permanente HWID (Massgrave) au 1er boot
+    offline_apps_dir: Optional[str] = None  # Dossier local d'installateurs (.exe, .msi) à intégrer dans Windows\Setup\Apps\
 
 
 class RegistryTweakRule(BaseModel):
@@ -193,6 +201,7 @@ class BuildProfile(BaseModel):
     compression_type: CompressionType = CompressionType.MAXIMUM  # Type de compression wim/esd
     split_wim_fat32: bool = False  # Découpage WIM pour compatibilité FAT32 / Clé USB UEFI
     cleanup_component_store: bool = False  # Nettoyage WinSxS /StartComponentCleanup /ResetBase pour alléger install.wim de 1 à 3 Go
+    optimize_wim: bool = True  # Recompression et défragmentation du WIM pour éliminer les clusters orphelins
 
     # Scripts post-installation
     post_install_scripts: List[str] = Field(default_factory=list)

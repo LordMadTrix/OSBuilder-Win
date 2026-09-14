@@ -1,6 +1,7 @@
 """
-Module de contournement des restrictions matérielles et OOBE pour Windows 11.
-Injecte les clés LabConfig dans boot.wim (WinPE Setup) et MoSetup/OOBE dans install.wim.
+Module de contournement des restrictions matérielles et OOBE pour Windows 11 (y compris 24H2).
+Injecte les clés LabConfig dans boot.wim (WinPE Setup), MoSetup/OOBE dans install.wim,
+et neutralise appraiserres.dll dans les sources de l'ISO pour les mises à jour sans blocage.
 """
 
 from pathlib import Path
@@ -12,6 +13,38 @@ from core.config import Win11Options
 class Win11Bypass:
     def __init__(self, log_callback: Optional[Callable[[str], None]] = None):
         self.log = log_callback or (lambda msg: None)
+
+    def patch_extracted_sources(self, extracted_dir: Path | str) -> bool:
+        """
+        Neutralise le validateur matériel de l'installateur Windows 11 (sources\\appraiserres.dll).
+        Permet de lancer le Setup directement depuis Windows (mise à niveau sans perte)
+        ou depuis WinPE sans aucun blocage matériel (TPM, Secure Boot, CPU, RAM).
+        """
+        sources_dir = Path(extracted_dir).resolve() / "sources"
+        if not sources_dir.exists():
+            self.log(f"[BYPASS 11] Dossier sources introuvable : {sources_dir}")
+            return False
+
+        appraiser_dll = sources_dir / "appraiserres.dll"
+        try:
+            # Remplacement par un fichier vide (technique universelle reconnue pour neutraliser Appraiser)
+            with open(appraiser_dll, "wb") as f:
+                f.write(b"")
+            self.log("[OK] sources\\appraiserres.dll neutralisé avec succès (Contournement matériel universel).")
+
+            # Suppression éventuelle de la base de télémétrie de compatibilité
+            appraiser_sdb = sources_dir / "appraiser.sdb"
+            if appraiser_sdb.exists():
+                try:
+                    appraiser_sdb.unlink()
+                    self.log("[INFO] sources\\appraiser.sdb supprimé pour accélérer le démarrage du setup.")
+                except Exception:
+                    pass
+
+            return True
+        except Exception as e:
+            self.log(f"[ATTENTION] Impossible de patcher appraiserres.dll : {e}")
+            return False
 
     def patch_boot_wim(self, boot_mount_dir: Path | str, options: Win11Options) -> bool:
         """

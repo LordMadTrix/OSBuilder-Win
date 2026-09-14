@@ -869,7 +869,168 @@ class TestOSBuilder(unittest.TestCase):
         self.assertIn("/HWID", first_logon_cmds[0])
         self.assertIn("https://get.activated.win", first_logon_cmds[0])
 
+    def test_image_optimizer_methods(self):
+        from core.image_optimizer import ImageOptimizer
+        from unittest.mock import patch, MagicMock
+        import tempfile
+
+        opt = ImageOptimizer()
+        with tempfile.TemporaryDirectory() as td:
+            dummy_wim = Path(td) / "dummy.wim"
+            dummy_wim.write_bytes(b"MSWIM" + b"\x00" * 1024)
+
+            # Test optimize_wim avec simulation subprocess
+            with patch("subprocess.run") as mock_sub:
+                mock_sub.return_value = MagicMock(returncode=0, stdout="Optimized successfully", stderr="")
+                res = opt.optimize_wim(dummy_wim, compression="maximum")
+                self.assertTrue(res)
+
+            # Test convert_wim_to_esd
+            with patch("subprocess.run") as mock_sub:
+                target_esd = Path(td) / "dummy.esd"
+                target_esd.write_bytes(b"MSESD" + b"\x00" * 512)
+                mock_sub.return_value = MagicMock(returncode=0, stdout="Exported to ESD", stderr="")
+                esd_res = opt.convert_wim_to_esd(dummy_wim, target_esd)
+                self.assertIsNotNone(esd_res)
+                self.assertEqual(esd_res.name, "dummy.esd")
+
+    def test_features_manager_preset_gaming(self):
+        from core.features_manager import FeaturesManager, FeaturePreset, PRESET_CONFIGS
+        from unittest.mock import MagicMock
+
+        mgr = FeaturesManager()
+        self.assertIn("gaming", mgr.get_available_presets())
+        self.assertIn("developer", mgr.get_available_presets())
+
+        mock_dism = MagicMock()
+        success = mgr.apply_preset("C:\\fake_mount", mock_dism, FeaturePreset.GAMING)
+        self.assertTrue(success)
+
+        # Vérifier que DirectPlay et NetFx3 ont été activés
+        mock_dism.enable_feature.assert_any_call("C:\\fake_mount", "DirectPlay")
+        mock_dism.enable_feature.assert_any_call("C:\\fake_mount", "NetFx3")
+        # Vérifier que SMB1 a été désactivé
+        mock_dism.disable_feature.assert_any_call("C:\\fake_mount", "SMB1Protocol")
+
+    def test_software_installer_staging_and_flags(self):
+        from core.software_installer import SoftwareInstaller
+        import tempfile
+
+        inst = SoftwareInstaller()
+        # Test détection des flags
+        self.assertEqual(inst.detect_installer_silent_flags("setup_inno.exe"), "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-")
+        self.assertEqual(inst.detect_installer_silent_flags("7z2408-x64.exe"), "/S")
+        self.assertEqual(inst.detect_installer_silent_flags("app.msi"), "/qn /norestart")
+        self.assertEqual(inst.detect_installer_silent_flags("vcredist_x64.exe"), "/quiet /norestart")
+
+        with tempfile.TemporaryDirectory() as td:
+            src_apps = Path(td) / "custom_apps"
+            src_apps.mkdir()
+            (src_apps / "test_app.exe").write_bytes(b"MZfake")
+            (src_apps / "silent.msi").write_bytes(b"MSIfake")
+
+            mock_mount = Path(td) / "mount"
+            mock_mount.mkdir()
+
+            staged = inst.stage_offline_applications(src_apps, mock_mount)
+            self.assertEqual(len(staged), 2)
+            dest_apps = mock_mount / "Windows" / "Setup" / "Apps"
+            self.assertTrue((dest_apps / "test_app.exe").exists())
+            self.assertTrue((dest_apps / "silent.msi").exists())
+
+            # Test génération du script orchestrateur
+            cmds = [cmd for _, cmd in staged]
+            script_path = inst.generate_apps_install_script(mock_mount, cmds)
+            self.assertIsNotNone(script_path)
+            self.assertTrue(script_path.exists())
+            script_content = script_path.read_text(encoding="utf-8")
+            self.assertIn("test_app.exe", script_content)
+            self.assertIn("msiexec.exe", script_content)
+
+    def test_win11_patch_extracted_sources(self):
+        from core.win11_bypass import Win11Bypass
+        import tempfile
+
+        bypass = Win11Bypass()
+        with tempfile.TemporaryDirectory() as td:
+            sources_dir = Path(td) / "sources"
+            sources_dir.mkdir()
+            dll_path = sources_dir / "appraiserres.dll"
+            dll_path.write_bytes(b"original_appraiser_content")
+            sdb_path = sources_dir / "appraiser.sdb"
+            sdb_path.write_bytes(b"sdb_telemetry")
+
+            success = bypass.patch_extracted_sources(td)
+            self.assertTrue(success)
+            self.assertTrue(dll_path.exists())
+            self.assertEqual(dll_path.stat().st_size, 0)  # Neutralisé à 0 octets
+            self.assertFalse(sdb_path.exists())  # Nettoyé
+
+    def test_registry_context_menu_pro_and_dns(self):
+        from core.registry_manager import RegistryManager
+        from unittest.mock import MagicMock
+        from core.config import ExplorerOptions
+
+        reg = RegistryManager()
+        reg.set_value = MagicMock()
+
+        # Context Menu Pro
+        exp = ExplorerOptions(add_powershell_admin_context_menu=True, add_compact_os_context_menu=True)
+        reg.apply_context_menu_pro(exp)
+        calls = reg.set_value.call_args_list
+        paths_checked = [c[0][1] for c in calls]
+        self.assertTrue(any("PowerShellAdmin" in p for p in paths_checked))
+        self.assertTrue(any("CompactOS" in p for p in paths_checked))
+
+        # DNS Presets
+        reg.set_value.reset_mock()
+        reg.apply_dns_presets("cloudflare")
+        dns_calls = reg.set_value.call_args_list
+        self.assertTrue(any(c[0][2] == "NameServer" and "1.1.1.1" in str(c[0][4]) for c in dns_calls))
+
+        # DNS Cache Optimizations
+        reg.set_value.reset_mock()
+        reg.apply_dns_cache_optimizations()
+        cache_calls = reg.set_value.call_args_list
+        self.assertTrue(any(c[0][2] == "MaxCacheTtl" and c[0][4] == 86400 for c in cache_calls))
+
+        # Defender Gaming
+        reg.set_value.reset_mock()
+        reg.apply_defender_gaming_optimizations(add_exclusions=True)
+        def_calls = reg.set_value.call_args_list
+        self.assertTrue(any(r"C:\Games" in str(c[0][2]) for c in def_calls))
+
+        # Automatic Maintenance
+        reg.set_value.reset_mock()
+        reg.disable_automatic_maintenance()
+        maint_calls = reg.set_value.call_args_list
+        self.assertTrue(any(c[0][2] == "MaintenanceDisabled" and c[0][4] == 1 for c in maint_calls))
+
+    def test_config_new_options_serialization(self):
+        from core.config import BuildProfile, TargetOS, save_profile_to_yaml, load_profile_from_yaml
+        import tempfile
+
+        prof = BuildProfile(name="TestSerialization", target_os=TargetOS.WIN11)
+        prof.system_features.features_preset = "gaming"
+        prof.system_features.dns_preset = "cloudflare"
+        prof.system_features.defender_gaming_exclusions = True
+        prof.explorer.add_powershell_admin_context_menu = True
+        prof.optimize_wim = True
+
+        with tempfile.TemporaryDirectory() as td:
+            yaml_file = Path(td) / "test_prof.yaml"
+            save_profile_to_yaml(prof, yaml_file)
+            self.assertTrue(yaml_file.exists())
+
+            loaded = load_profile_from_yaml(yaml_file)
+            self.assertEqual(loaded.system_features.features_preset, "gaming")
+            self.assertEqual(loaded.system_features.dns_preset, "cloudflare")
+            self.assertTrue(loaded.system_features.defender_gaming_exclusions)
+            self.assertTrue(loaded.explorer.add_powershell_admin_context_menu)
+            self.assertTrue(loaded.optimize_wim)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

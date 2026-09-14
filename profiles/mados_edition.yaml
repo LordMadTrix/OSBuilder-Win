@@ -80,6 +80,8 @@ explorer:
   add_restart_explorer_context_menu: true
   add_open_with_notepad: true
   add_cmd_admin_here: true
+  add_powershell_admin_context_menu: true
+  add_compact_os_context_menu: true
   apply_mados_theme: true
   mados_accent_color: "#00f0ff"
 
@@ -93,6 +95,7 @@ services:
   disable_telemetry_tasks: true
   disable_windows_update_auto_reboot: true
   disable_delivery_optimization: true
+  disable_automatic_maintenance: true
 
 system_features:
   enable_net35: true
@@ -109,6 +112,10 @@ system_features:
   disable_edge_telemetry: true
   disable_smartscreen: false
   optimize_memory_paging: true
+  defender_gaming_exclusions: true
+  dns_preset: "cloudflare"
+  optimize_dns_cache: true
+  features_preset: "gaming"
 
 oem:
   enabled: true
