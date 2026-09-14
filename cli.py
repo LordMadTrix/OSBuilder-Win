@@ -36,7 +36,8 @@ BANNER = r"""[bold cyan]
  | |__| |____) | |_) | |_| | | | (_| |  __/ |         \  /\  /  | | | | |
   \____/|_____/|____/ \__,_|_|_|\__,_|\___|_|          \/  \/   |_|_| |_|
 [/bold cyan]
-[dim white]Générateur d'images Windows personnalisées (7, 10, 11) - Par LordMadTrix[/dim white]
+[bold magenta]⚡ ÉDITION SIGNATURE OFFICIELLE LORDMADTRIX • SUITE STUDIO v2.5 PRO ⚡[/bold magenta]
+[dim white]Architecture industrielle de déploiement et d'optimisation Windows (7, 10, 11)[/dim white]
 """
 
 

@@ -603,7 +603,7 @@ class UsbDeployWorker(QThread):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("OSBuilder-Win Studio — Suite Industrielle de Déploiement Windows")
+        self.setWindowTitle("OSBuilder-Win Studio v2.5 PRO — Édition Signature LordMadTrix")
         self.resize(1100, 840)
         self.setMinimumSize(940, 700)
 
@@ -694,12 +694,19 @@ class MainWindow(QMainWindow):
             "background-color: #1e293b; color: #38ef7d; font-size: 11px; font-weight: bold; "
             "padding: 2px 8px; border-radius: 4px; border: 1px solid #2e3d55;"
         )
+        sig_chip = QLabel("👑 ÉDITION SIGNATURE LORDMADTRIX")
+        sig_chip.setStyleSheet(
+            "background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7928ca, stop:1 #00f0ff); "
+            "color: #ffffff; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; "
+            "padding: 3px 10px; border-radius: 4px; border: 1px solid #00f0ff;"
+        )
         title_row.addWidget(title_lbl)
         title_row.addWidget(version_lbl)
+        title_row.addWidget(sig_chip)
         title_row.addStretch()
         title_box.addLayout(title_row)
 
-        subtitle_lbl = QLabel("Architecture industrielle pour Windows 7 / 10 / 11 24H2 — Développé pour LordMadTrix")
+        subtitle_lbl = QLabel("Architecture industrielle pour Windows 7 / 10 / 11 24H2 — Développé et Signé par LordMadTrix")
         subtitle_lbl.setStyleSheet("color: #8b9bb4; font-size: 12px;")
         title_box.addWidget(subtitle_lbl)
         header_layout.addLayout(title_box)
@@ -724,6 +731,15 @@ class MainWindow(QMainWindow):
         theme_box.addWidget(lbl_theme)
         theme_box.addWidget(self.cb_theme)
         header_layout.addLayout(theme_box)
+
+        # Bouton Signature Officielle LordMadTrix
+        btn_signature = QPushButton("👑 Signature LordMadTrix")
+        btn_signature.setStyleSheet(
+            "background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7928ca, stop:1 #00f0ff); "
+            "color: #ffffff; font-weight: bold; border-radius: 6px; padding: 6px 14px; border: none;"
+        )
+        btn_signature.clicked.connect(self._show_signature_dialog)
+        header_layout.addWidget(btn_signature)
 
         # Diagnostic Status Chips
         self.chip_admin = QLabel()
@@ -751,6 +767,12 @@ class MainWindow(QMainWindow):
         self.status_lbl = QLabel("Prêt pour la configuration.")
         self.status_lbl.setStyleSheet("color: #94a3b8; font-weight: 500;")
         footer_layout.addWidget(self.status_lbl)
+
+        # Signature dans la barre d'état
+        self.lbl_sig_footer = QLabel("⚡ Édition Signée Officielle LordMadTrix • Écosystème MadOS")
+        self.lbl_sig_footer.setStyleSheet("color: #00f0ff; font-weight: 700; font-size: 11px; margin-left: 15px;")
+        footer_layout.addWidget(self.lbl_sig_footer)
+
         footer_layout.addStretch()
 
         self.btn_build = QPushButton("🚀 Lancer la Création de l'ISO")
@@ -759,6 +781,59 @@ class MainWindow(QMainWindow):
         footer_layout.addWidget(self.btn_build)
 
         return footer_layout
+
+    def _show_signature_dialog(self):
+        """Affiche la boîte de dialogue de signature officielle LordMadTrix."""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("👑 Signature Officielle — LordMadTrix")
+        dialog.setFixedSize(540, 420)
+        dialog.setStyleSheet("background-color: #0d1117; color: #f0f6fc;")
+
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(24, 20, 24, 20)
+        layout.setSpacing(14)
+
+        # En-tête néon
+        header_lbl = QLabel("⚡ ÉDITION SIGNATURE OFFICIELLE ⚡")
+        header_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_lbl.setStyleSheet("color: #00f0ff; font-size: 16px; font-weight: 900; letter-spacing: 1px;")
+        layout.addWidget(header_lbl)
+
+        author_lbl = QLabel("LordMadTrix")
+        author_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        author_lbl.setStyleSheet("color: #ffffff; font-size: 26px; font-weight: 800;")
+        layout.addWidget(author_lbl)
+
+        desc_lbl = QLabel(
+            "Créateur, Architecte & Développeur en chef de la suite OSBuilder-Win Studio et de l'écosystème MadOS.\n\n"
+            "• Ingénierie de déploiement Windows 7, 10 et 11 (24H2)\n"
+            "• Optimisations Kernel, réduction drastique de latence DPC & Esport\n"
+            "• Débridage universel du matériel (Bypass TPM, SecureBoot, CPU, RAM)\n"
+            "• Automatisation zéro-clic et servicing DISM / Registry haute performance"
+        )
+        desc_lbl.setStyleSheet("color: #8b9bb4; font-size: 13px; line-height: 1.5; padding: 10px; background-color: #161b22; border-radius: 8px; border: 1px solid #30363d;")
+        desc_lbl.setWordWrap(True)
+        layout.addWidget(desc_lbl)
+
+        btn_row = QHBoxLayout()
+        btn_github = QPushButton("🌐 Profil GitHub LordMadTrix")
+        btn_github.setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7928ca, stop:1 #00f0ff); color: #ffffff; font-weight: bold; padding: 8px 16px; border-radius: 6px;")
+        btn_github.clicked.connect(lambda: webbrowser.open("https://github.com/LordMadTrix"))
+
+        btn_repo = QPushButton("📂 Dépôt OSBuilder-Win")
+        btn_repo.setStyleSheet("background-color: #21262d; color: #f0f6fc; font-weight: bold; padding: 8px 16px; border-radius: 6px; border: 1px solid #30363d;")
+        btn_repo.clicked.connect(lambda: webbrowser.open("https://github.com/LordMadTrix/OSBuilder-Win"))
+
+        btn_close = QPushButton("Fermer")
+        btn_close.setStyleSheet("background-color: #30363d; color: #f0f6fc; padding: 8px 16px; border-radius: 6px;")
+        btn_close.clicked.connect(dialog.close)
+
+        btn_row.addWidget(btn_github)
+        btn_row.addWidget(btn_repo)
+        btn_row.addWidget(btn_close)
+        layout.addLayout(btn_row)
+
+        dialog.exec()
 
     def _check_system_health(self):
         if is_admin():

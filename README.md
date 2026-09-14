@@ -160,6 +160,33 @@ OK (100% pass rate)
 
 ---
 
+## 👑 Signature & Auteur Officiel
+
+<div align="center">
+
+```
+  ██╗      ██████╗ ██████╗ ██████╗ ███╗   ███╗ █████╗ ██████╗ ████████╗██████╗ ██╗██╗  ██╗
+  ██║     ██╔═══██╗██╔══██╗██╔══██╗████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗██║╚██╗██╔╝
+  ██║     ██║   ██║██████╔╝██║  ██║██╔████╔██║███████║██║  ██║   ██║   ██████╔╝██║ ╚███╔╝ 
+  ██║     ██║   ██║██╔══██╗██║  ██║██║╚██╔╝██║██╔══██║██║  ██║   ██║   ██╔══██╗██║ ██╔██╗ 
+  ███████╗╚██████╔╝██║  ██║██████╔╝██║ ╚═╝ ██║██║  ██║██████╔╝   ██║   ██║  ██║██║██╔╝ ██╗
+  ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝╚═════╝    ╚═╝   ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝
+```
+
+### ⚡ **Édition Signée par LordMadTrix**
+*Architecte Système • Développeur de l'Écosystème MadOS • Spécialiste Déploiement & Gaming Basse Latence*
+
+[![GitHub LordMadTrix](https://img.shields.io/badge/GitHub-LordMadTrix-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/LordMadTrix)
+[![OSBuilder-Win](https://img.shields.io/badge/Repository-OSBuilder--Win-00f0ff?style=for-the-badge&logo=git&logoColor=black)](https://github.com/LordMadTrix/OSBuilder-Win)
+[![MadOS Ecosystem](https://img.shields.io/badge/MadOS-Official%20Ecosystem-7928ca?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/LordMadTrix)
+
+> *"Optimiser chaque cycle processeur, supprimer l'inutile, libérer la puissance brute de la machine."*  
+> — **LordMadTrix**
+
+</div>
+
+---
+
 ## 🤝 Crédits & Remerciements
 
 - **Conception & Architecture** : [LordMadTrix](https://github.com/LordMadTrix)
@@ -172,3 +199,4 @@ OK (100% pass rate)
 <div align="center">
   <sub>Développé avec passion pour l'écosystème LordMadTrix. Tous droits réservés © 2026.</sub>
 </div>
+

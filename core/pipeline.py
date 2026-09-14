@@ -62,12 +62,16 @@ class BuildPipeline:
     def run(self, source_iso: Path | str, output_iso: Path | str) -> bool:
         """Exécute l'intégralité du pipeline de build."""
         self._is_cancelled = False
-        self.log("=" * 60)
-        self.log(f"LANCEMENT DU PIPELINE OSBUILDER-WIN : {self.profile.name}")
+        self.log("=" * 65)
+        self.log("  ⚡ OSBUILDER-WIN STUDIO v2.5 PRO ⚡")
+        self.log("  👑 ÉDITION OFFICIELLE SIGNÉE LORDMADTRIX 👑")
+        self.log("  🌐 https://github.com/LordMadTrix/OSBuilder-Win")
+        self.log("=" * 65)
+        self.log(f"LANCEMENT DU PIPELINE : {self.profile.name}")
         self.log(f"OS Cible : {self.profile.target_os.value.upper()} ({self.profile.architecture})")
         self.log(f"Source ISO : {source_iso}")
         self.log(f"Sortie ISO : {output_iso}")
-        self.log("=" * 60)
+        self.log("=" * 65)
 
         # 0. Vérifications initiales
         if not self.dism.is_admin():
@@ -211,9 +215,10 @@ class BuildPipeline:
             except Exception as e:
                 self.log(f"[ATTENTION] Impossible de générer le rapport : {e}")
 
-            self.log("=" * 60)
+            self.log("=" * 65)
             self.log(f"[SUCCÈS] Le build s'est terminé avec succès ! Fichier : {output_iso}")
-            self.log("=" * 60)
+            self.log("👑 Forgeage terminé • Signé par l'Architecture LordMadTrix ⚡")
+            self.log("=" * 65)
             return True
 
         finally:
