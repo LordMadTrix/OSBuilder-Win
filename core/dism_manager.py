@@ -7,6 +7,7 @@ et l'optimisation des images WIM/ESD de Windows.
 import ctypes
 import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
