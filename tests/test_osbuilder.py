@@ -112,6 +112,20 @@ class TestOSBuilder(unittest.TestCase):
         self.assertEqual(editions[1]["name"], "Windows 11 Famille")
         self.assertEqual(editions[1]["index"], "2")
 
+    def test_dism_find_wimlib_falls_back_to_path_lookup(self):
+        # Régression : _find_wimlib() utilise shutil.which() sans que le module
+        # 'shutil' ne soit importé dans dism_manager.py, provoquant un NameError
+        # dès que wimlib-imagex.exe est absent du dossier bin/ du projet.
+        from unittest.mock import patch
+        from core.dism_manager import DismManager
+
+        dism = DismManager()
+        with patch("core.dism_manager.Path.exists", return_value=False), \
+             patch("core.dism_manager.shutil.which", return_value=None) as mock_which:
+            result = dism._find_wimlib()
+        self.assertIsNone(result)
+        mock_which.assert_called_once_with("wimlib-imagex")
+
     def test_dism_split_image_cmd(self):
         from unittest.mock import MagicMock
         from core.dism_manager import DismManager
